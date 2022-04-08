@@ -57,7 +57,25 @@ class UAHDataset:
 
         return recordings
 
-    def dataframe(self, driver: str, skip_missing_headers: bool = False, suppress_warings: bool = True) -> Tuple[Dict]:
+    def dataframe(self, skip_missing_headers: bool = False, suppress_warings: bool = False) -> Dict:
+        complete = {}
+        for driver in self.drivers:
+            road_type_dict = self.dataframe_by_driver(driver, skip_missing_headers, suppress_warings)
+            for road_type, label_dict in road_type_dict.items():
+                c = complete.get(road_type, {})
+                for label, data in label_dict.items():
+                    l = c.get(label, pandas.DataFrame())
+                    if l.empty:
+                        l = data
+                    else:
+                        l = l.merge(data, how="left")
+
+                    c[label] = l
+                complete[road_type] = c
+
+        return complete             
+
+    def dataframe_by_driver(self, driver: str, skip_missing_headers: bool = False, suppress_warings: bool = False) -> Dict:
         """This method loads the recordings of a provided driver into a pandas dataframe.
 
         Args:
@@ -71,7 +89,7 @@ class UAHDataset:
             RuntimeError: Can occur if the header is missing or if the header was set to a wrong value.
 
         Returns:
-            Tuple[Dict]: Returns a tuple of dicts (road_type, labeled) with the keys as a dataframe.
+            Tuple[Dict]: Returns a dict (key: road_type) with the keys as a dataframe.
         """
         if driver not in self.drivers:
             raise ArgumentError(
@@ -81,7 +99,6 @@ class UAHDataset:
         road_types = ["SECONDARY", "MOTORWAY"]
 
         road_type_dict = {}
-        label_dict = {}
         for rec in os.listdir(folder):
             time_stamp, distance, _, behaviour, road_type = rec.split("-")
 
@@ -91,8 +108,11 @@ class UAHDataset:
                     continue
 
                 # read the dataset file into a pandas dataframe
-                data = pandas.read_csv(
-                    f"{folder}/{rec}/{file}", sep=" ", header=None)
+                try:
+                    data = pandas.read_csv(
+                        f"{folder}/{rec}/{file}", sep=" ", header=None)
+                except pandas.errors.EmptyDataError:
+                    pass
 
                 # check if file has a registered header
                 if file[:-4] not in headers.keys():
@@ -127,12 +147,14 @@ class UAHDataset:
                     data, how="left")  # , on="time")
 
             # store the merged data corresponding to several keys
-            l = road_type_dict.get(road_type, [])
-            l.append((behaviour, merged_data))
-            road_type_dict[road_type] = l
-            
-            l = label_dict.get(behaviour, [])
-            l.append((road_type, merged_data))
-            label_dict[behaviour] = l
+            label_dict = road_type_dict.get(road_type, {})
+            data = label_dict.get(behaviour, pandas.DataFrame())
+            if data.empty:
+                data = merged_data
+            else:
+                data = data.merge(merged_data, how="left")
 
-        return road_type_dict, label_dict
+            label_dict[behaviour] = data
+            road_type_dict[road_type] = label_dict
+
+        return road_type_dict
