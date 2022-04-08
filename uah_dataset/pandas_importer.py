@@ -68,7 +68,7 @@ class UAHDataset:
                     if l.empty:
                         l = data
                     else:
-                        l = l.merge(data, how="left")
+                        l = pandas.concat([l, data])
 
                     c[label] = l
                 complete[road_type] = c
@@ -144,7 +144,7 @@ class UAHDataset:
                     continue
 
                 merged_data = merged_data.merge(
-                    data, how="left")  # , on="time")
+                    data, how="left", on="time")  # , on="time")
 
             # store the merged data corresponding to several keys
             label_dict = road_type_dict.get(road_type, {})
@@ -152,7 +152,7 @@ class UAHDataset:
             if data.empty:
                 data = merged_data
             else:
-                data = data.merge(merged_data, how="left")
+                data = pandas.concat([data, merged_data])
 
             label_dict[behaviour] = data
             road_type_dict[road_type] = label_dict
