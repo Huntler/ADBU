@@ -106,6 +106,7 @@ class UAHDataset:
             for file in os.listdir(f"{folder}/{rec}"):
                 if file[-4:] != ".txt" or file == "SEMANTIC_FINAL.txt":
                     continue
+                    #TODO why we do not consider this file?
 
                 # read the dataset file into a pandas dataframe
                 try:
