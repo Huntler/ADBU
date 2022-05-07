@@ -16,7 +16,7 @@ Run docker
 
 ## Use
 
-The API provides two endpoints located to
+The API provides two endpoints located at
 
 + <http://localhost:8000/>
 
@@ -25,4 +25,4 @@ The API provides two endpoints located to
 
 as well as the auto-generated 
 
-localhost/docs
++ <http://localhost:8000/docs>
