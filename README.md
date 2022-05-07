@@ -18,8 +18,10 @@ Run docker
 
 The API provides two endpoints located to
 
-localhost/
-localhost/status
+[http://localhost:8000/]
+
+
+[http://localhost:8000/status]
 
 as well as the auto-generated 
 
