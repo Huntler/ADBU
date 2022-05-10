@@ -2,6 +2,9 @@ from argparse import ArgumentError
 from typing import Dict, List, Tuple
 import os
 import pandas
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 headers = {
@@ -20,10 +23,22 @@ headers = {
 
 
 class UAHDataset:
-    def __init__(self) -> None:
+    def __init__(self, generate_video_frames: bool = False) -> None:
+        """This class represents the UAH Dataset as pandas dataframe. If enabled, this class will 
+        extract the video data, so each recorded time step has its corresponding video frame.
+
+        Args:
+            generate_video_frames (bool, optional): This will extract the video frames and store them 
+            onto the disk so they can be accessed later. Defaults to False.
+        """
         # load dataset versions available and choose the latest one
         self.__root_dir = "./uah_dataset/"
         self.__latest = self.latest
+
+        # generate frames
+        if generate_video_frames:
+            for driver in self.drivers:
+                self.__extract_frames_from_video(driver)
 
     @property
     def versions(self) -> List[str]:
@@ -73,7 +88,84 @@ class UAHDataset:
                     c[label] = l
                 complete[road_type] = c
 
-        return complete             
+        return complete       
+
+    def __pre_process_frame(self, image: np.array) -> np.array:
+        f = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        f = cv2.equalizeHist(f)
+        return f
+
+    def __extract_frames_from_video(self, driver: str) -> None:
+        """This method extracts all needed video frames for a provided driver and stores 
+        them into the dataframe.
+
+        Args:
+            driver (str): The driver for which the video data has to be extracted.
+
+        Raises:
+            RuntimeError: Is thrown if a video file was not found or if the data was extracted already.
+        """
+        folder = f"{self.__root_dir}/{self.latest}/{driver}"
+        dataframe = self.dataframe_by_driver(driver, skip_missing_headers=True, suppress_warings=True)
+
+        for rec in os.listdir(folder):
+            if os.path.isfile(f"{folder}/{rec}"):
+                continue
+
+            time_stamp, distance, _, behaviour, road_type = rec.split("-")
+            data = dataframe[road_type][behaviour]
+
+            # find the video file
+            video_file = None
+            for file in os.listdir(f"{folder}/{rec}"):
+                if file[-4:] == ".mp4":
+                    video_file = file
+                    break
+            
+            if video_file is None:
+                raise RuntimeError(f"Video file for driver {driver} with behaviour {behaviour} on road {road_type} does not exist.")
+            
+            # get the time stamps of recorderd sensor data, we want to find the corresponding video frame
+            times = list(data["time"].values)
+
+            # create a frame folder in which all found frames are stored
+            if os.path.exists(f"{folder}/{rec}/frames"):
+                # os.remove(f"{folder}/{rec}/frames")
+                raise RuntimeError("Frames were extracted, nothing to do.")
+
+            os.mkdir(f"{folder}/{rec}/frames")
+
+            # load the video file and store the found frames into the frame folder
+            frame_num = 0
+            num_frames_stored = 0
+            last_frame = None
+            cap = cv2.VideoCapture(f"{folder}/{rec}/{video_file}")
+            while (cap.isOpened()):
+                # capture frame-by-frame
+                ret, frame = cap.read()
+                if ret == True:
+                    frame_num += 1
+                    current_time = frame_num / cap.get(cv2.CAP_PROP_FPS)
+
+                    if len(times) == 0:
+                        break
+
+                    # add the last frame of the video if it matches to the time we have sensor data of
+                    if times[0] < current_time:
+                        # pre-process and store the frame
+                        f = self.__pre_process_frame(last_frame)                        
+                        plt.imsave(f"{folder}/{rec}/frames/frame_{num_frames_stored}.png", f, cmap="gray")
+
+                        # remove that time from our times_list and count the amount of stored frames
+                        times.pop(0)
+                        num_frames_stored += 1
+
+                    last_frame = frame
+
+                else:
+                    break
+
+            pass
 
     def dataframe_by_driver(self, driver: str, skip_missing_headers: bool = False, suppress_warings: bool = False) -> Dict:
         """This method loads the recordings of a provided driver into a pandas dataframe.
@@ -100,6 +192,9 @@ class UAHDataset:
 
         road_type_dict = {}
         for rec in os.listdir(folder):
+            if os.path.isfile(f"{folder}/{rec}"):
+                continue
+
             time_stamp, distance, _, behaviour, road_type = rec.split("-")
 
             merged_data = pandas.DataFrame()

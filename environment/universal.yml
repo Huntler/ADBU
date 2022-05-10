@@ -4,5 +4,6 @@ dependencies:
     - python=3.9
     - pandas
     - matplotlib
+    - opencv
     - pip:
       - scikit-learn
