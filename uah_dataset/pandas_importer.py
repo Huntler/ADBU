@@ -155,6 +155,10 @@ class UAHDataset:
             else:
                 data = pandas.concat([data, merged_data])
 
+            # replace values, which are NaN using interpolation of surroundings
+            data.interpolate(method="linear", inplace=True)
+            data.fillna(method='bfill', inplace=True)
+
             label_dict[behaviour] = data
             road_type_dict[road_type] = label_dict
 

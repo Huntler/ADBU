@@ -5,12 +5,6 @@ from sklearn.cluster import KMeans
 
 from uah_dataset.pandas_importer import UAHDataset
 
-# TODO: create entry for each time step: problem is "how to fill missing values?"
-# approach 1: simply repeat previous values
-# approach 2: calculate some kind of regression or use splines
-# approach X: ?
-# EFFORT: 6h? (depending on approach and existing data)
-# Florene
 
 # TODO: find missing headers: have a look into their data reader again
 # EFFORT: 2h (at most)
