@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
+import tensorflow as tf
 
 
 from uah_dataset.pandas_importer import UAHDataset
@@ -67,5 +68,19 @@ fused_data = np.array(array)
 fused_data[np.isnan(fused_data)]=0
 kmeans = KMeans(n_clusters=2, random_state=0).fit(fused_data)
 
+print(fused_data.shape)
 
+# define model
+'''model = Sequential()
+model.add(LSTM(100, activation='relu', input_shape=(n_in,1)))
+model.add(RepeatVector(n_in))
+model.add(LSTM(100, activation='relu', return_sequences=True))
+model.add(TimeDistributed(Dense(1)))
+model.compile(optimizer='adam', loss='mse')'''
+
+
+'''Then we will extract the inner layer after training'''
+
+
+'''We will finaly cluster based on the representation'''
 print(kmeans.labels_)
