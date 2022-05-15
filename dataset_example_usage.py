@@ -66,17 +66,44 @@ for road_type in road_type_dict.items():
 
 fused_data = np.array(array)
 fused_data[np.isnan(fused_data)]=0
+
 kmeans = KMeans(n_clusters=2, random_state=0).fit(fused_data)
 
-print(fused_data.shape)
+
 
 # define model
-'''model = Sequential()
-model.add(LSTM(100, activation='relu', input_shape=(n_in,1)))
-model.add(RepeatVector(n_in))
-model.add(LSTM(100, activation='relu', return_sequences=True))
-model.add(TimeDistributed(Dense(1)))
-model.compile(optimizer='adam', loss='mse')'''
+'''
+visible = Input(shape=(8,))
+# encoder level 1
+e = Dense(n_inputs*2)(visible)
+e = BatchNormalization()(e)
+e = LeakyReLU()(e)
+# encoder level 2
+e = Dense(n_inputs)(e)
+e = BatchNormalization()(e)
+e = LeakyReLU()(e)
+# bottleneck
+n_bottleneck = n_inputs
+bottleneck = Dense(n_bottleneck)(e)
+
+# define decoder, level 1
+d = Dense(n_inputs)(bottleneck)
+d = BatchNormalization()(d)
+d = LeakyReLU()(d)
+# decoder level 2
+d = Dense(n_inputs*2)(d)
+d = BatchNormalization()(d)
+d = LeakyReLU()(d)
+# output layer
+output = Dense(n_inputs, activation='linear')(d)
+# define autoencoder model
+model = Model(inputs=visible, outputs=output)
+
+# compile autoencoder model
+model.compile(optimizer='adam', loss='mse')
+
+history = model.fit(X_train, X_train, epochs=200, batch_size=16, verbose=2, validation_data=(X_test,X_test))
+'''
 
 
 '''Then we will extract the inner layer after training'''
