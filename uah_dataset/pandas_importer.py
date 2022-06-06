@@ -4,6 +4,7 @@ import os
 import pandas
 import cv2
 import numpy as np
+import shutil
 import matplotlib.pyplot as plt
 
 
@@ -80,6 +81,7 @@ class UAHDataset:
                 c = complete.get(road_type, {})
                 for label, data in label_dict.items():
                     l = c.get(label, pandas.DataFrame())
+                    data["Driver"] = driver
                     if l.empty:
                         l = data
                     else:
@@ -129,43 +131,55 @@ class UAHDataset:
             times = list(data["time"].values)
 
             # create a frame folder in which all found frames are stored
-            if os.path.exists(f"{folder}/{rec}/frames"):
-                # os.remove(f"{folder}/{rec}/frames")
-                raise RuntimeError("Frames were extracted, nothing to do.")
+            if not os.path.exists(f"{folder}/{rec}/frames"):
+                os.mkdir(f"{folder}/{rec}/frames")
+            else:
+                # os.unlink(f"{folder}/{rec}/frames")
+                shutil.rmtree(f"{folder}/{rec}/frames")
+                os.mkdir(f"{folder}/{rec}/frames")
 
-            os.mkdir(f"{folder}/{rec}/frames")
+                # raise RuntimeError("Frames were extracted, nothing to do.")
+                # print(f"Continued {folder}/{rec}")
+                # continue
 
-            # load the video file and store the found frames into the frame folder
-            frame_num = 0
-            num_frames_stored = 0
-            last_frame = None
-            cap = cv2.VideoCapture(f"{folder}/{rec}/{video_file}")
-            while (cap.isOpened()):
-                # capture frame-by-frame
-                ret, frame = cap.read()
-                if ret == True:
-                    frame_num += 1
-                    current_time = frame_num / cap.get(cv2.CAP_PROP_FPS)
+            os.system( f"ffmpeg -i {folder}/{rec}/{video_file} -vf fps={1},hue=s=0 {folder}/{rec}/frames/frame%6d.png")
 
-                    if len(times) == 0:
-                        break
 
-                    # add the last frame of the video if it matches to the time we have sensor data of
-                    if times[0] < current_time:
-                        # pre-process and store the frame
-                        f = self.__pre_process_frame(last_frame)                        
-                        plt.imsave(f"{folder}/{rec}/frames/frame_{num_frames_stored}.png", f, cmap="gray")
-
-                        # remove that time from our times_list and count the amount of stored frames
-                        times.pop(0)
-                        num_frames_stored += 1
-
-                    last_frame = frame
-
-                else:
-                    break
-
-            pass
+            # # load the video file and store the found frames into the frame folder
+            # frame_num = 0
+            # num_frames_stored = 0
+            # last_frame = None
+            # cap = cv2.VideoCapture(f"{folder}/{rec}/{video_file}")
+            # print(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            # while (cap.isOpened()):
+            #     # capture frame-by-frame
+            #     print("Hello")
+            #     ret, frame = cap.read()
+            #     if ret == True:
+            #         if len(times) == 0:
+            #             break
+            #
+            #         frame_num += 1
+            #         current_time = frame_num / cap.get(cv2.CAP_PROP_FPS)
+            #
+            #
+            #
+            #         # add the last frame of the video if it matches to the time we have sensor data of
+            #         if times[0] < current_time:
+            #             # pre-process and store the frame
+            #             f = self.__pre_process_frame(last_frame)
+            #             plt.imsave(f"{folder}/{rec}/frames_1/frame{num_frames_stored:06d}.png", f, cmap="gray")
+            #
+            #             # remove that time from our times_list and count the amount of stored frames
+            #             times.pop(0)
+            #             num_frames_stored += 1
+            #
+            #         last_frame = frame
+            #
+            #     else:
+            #         break
+            #
+            # pass
 
     def dataframe_by_driver(self, driver: str, skip_missing_headers: bool = False, suppress_warings: bool = False) -> Dict:
         """This method loads the recordings of a provided driver into a pandas dataframe.

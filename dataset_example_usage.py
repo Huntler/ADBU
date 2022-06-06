@@ -5,8 +5,7 @@ import tensorflow as tf
 import copy
 import matplotlib.pyplot as plt
 import os
-import imageio
-
+from utils import windowing, dict_with_all_frames_pointed, add_pointers_to_window, read
 from uah_dataset.pandas_importer import UAHDataset
 
 
@@ -24,10 +23,10 @@ from uah_dataset.pandas_importer import UAHDataset
 # to extract video data (run this one time only to set up your dataset correctly)
 # UAHDataset(generate_video_frames=True)
 
-# create the dataset
-# dataset = UAHDataset()
-# print("Dataset:", dataset.latest)
-# print("Drivers:", dataset.drivers)
+# create the dataset  #generate_video_frames may take quite some time and disk memory
+dataset = UAHDataset(generate_video_frames=True)
+print("Dataset:", dataset.latest)
+print("Drivers:", dataset.drivers)
 
 
 # #test
@@ -45,7 +44,8 @@ from uah_dataset.pandas_importer import UAHDataset
 # # note: this should work, but we loose information about when a time series resets.
 # # This could prevent learning later on.
 # print("Info of all drivers")'''
-# road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+
+road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
 
 # '''roads = [_ for _ in road_type_dict.keys()]
 # print("# Roads:", sum([len(road_type_dict[_]) for _ in roads]))
@@ -123,102 +123,27 @@ history = model.fit(X_train, X_train, epochs=200, batch_size=16, verbose=2, vali
 
 
 
-def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold : int = 60, increment : int = 10) -> dict:
-    """
-    Creates windows, for every
-    :param dictionary: nested dic road types -> mood -> dataframe
-    :param rows_per_minute: number of rows that on averag consistute one minute
-    :param initial_threshold: timestamp when we start to approve the windows
-    :param increment: timestamp difference between end of adjacent windows
-    :return: dictionary: road type -> mood -> window_index -> dataframe
-    """
-
-    window_number = 0
-    window_time = 0
-    time_difference = []
-    for road, road_dic in dictionary.items():
-        i = 0
-        print(f"______________________Road: {road} _________________________________")
-        for mood, mood_df in road_dic.items():
-            windowed = {}
-            t = initial_threshold                                    #first window ends at a point where more than t seconds have passed
-            print(f"Mood: {mood}")
-            for window in mood_df.rolling(window = rows_per_minute):
-                if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
-                    t = initial_threshold
-                elif int(window.iloc[-1, 0]) > t:
-                    if len(window) == rows_per_minute:
-                        windowed[i] = window
-                        i += 1
-                        window_number += 1
-                        time = (window.iloc[-1, 0]-window.iloc[0,0])+1
-                        window_time += time
-                        time_difference.append(time)
-                    t += increment                     #creates 10 second windows
-
-            windowed_dic[road][mood] = windowed
-
-    print(f"Average window timelapse: {window_time/window_number}")
-    print(f"Number of windows: {window_number}")
-    plt.hist(time_difference, bins = 120)
-    plt.title(f"Window timelapse for {rows_per_minute} data points.")
-    plt.xlabel("Seconds")
-    plt.show()
-    return windowed_dic
-
-
-
-
-
-
-def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH-DRIVESET-v1/"):
-    """
-    Mainly copied from the original reader
-    :param path_to_uah_folder:
-    :return: Online semantics, in nested dictionary ->road type -> mood -> dataframe for all driver on this mood and road type
-    """
-    root_dir = "./uah_dataset/"
-    latest = "UAH-DRIVESET-v1/"
-    drivers  = ['D1','D2','D3','D4','D5','D6']
-    roads = ["MOTORWAY", "SECONDARY"]
-
-    headers = ["TimeStamp", "Latitude" , " Longitude", "Total" , "Accel", "Braking", "Turning", "Weaving",
-                "Drifting", "Oversspeed", "Carfollow", "Normal", "Drowsy", "Aggressive", "Unknown",
-                "Total_last_minute", "Accel_last_minute", "Braking_last_minute" , "Turning_last_minute",
-                "Weaving_last_minute","Drifting_last_minute", "Oversspeed_last_minute", "Carfollow_last_minute",
-                "Normal_last_minute", "Drowsy_last_minute", "Aggressive_last_minute", "Unknown_last_minute"
-                ]
-    online_semantics = {}
-    for driver in drivers:
-        folder = f"{path_to_uah_folder}{driver}"
-        for direc in os.listdir(folder):
-            splitted_string = direc.split('-')
-            road = splitted_string[-1]
-            mood = splitted_string[-2]
-            scoresFileName = folder + '/' + direc + '/' + 'SEMANTIC_ONLINE.txt'
-            scoresData = np.genfromtxt(scoresFileName, dtype=np.float64, delimiter=' ')
-            df = pd.DataFrame(scoresData, columns = headers)
-
-            if road in online_semantics:
-                if mood in online_semantics[road]:
-                    online_semantics[road][mood] = pd.concat([online_semantics[road][mood], df])
-                else:
-                    online_semantics[road][mood] = df
-            else:
-                online_semantics.update({road : {mood : df}})
-
-
-    return online_semantics
-
 
 
 
 
 if __name__ == "__main__":
-    # windowed_dic = copy.deepcopy(road_type_dict)
+    # windowed_dic = road_type_dict
     # rows_per_minute = 400  # for dataframe, doesnt work consistently
     # windowing(windowed_dic, rows_per_minute=rows_per_minute)
     windowed_dic = read()
     rows_per_minute = 60 #for online semantics
     w = windowing(windowed_dic, rows_per_minute=rows_per_minute)
+    df = w['SECONDARY']['NORMAL1'][0]
+    pointers = []
+    for key, df in w['SECONDARY']['NORMAL1'].items():
+        pointers.append(add_pointers_to_window(df, "SECONDARY" , "NORMAL1")[1])
+
+    dic = dict_with_all_frames_pointed(pointers)
+
+    plt.imshow(dic[pointers[0][0]])
+    plt.show()
+    print(len(pointers))
+    print(len(pointers[0]))
     pass
+
