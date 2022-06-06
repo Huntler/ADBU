@@ -147,13 +147,14 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
                     t = initial_threshold
                 elif int(window.iloc[-1, 0]) > t:
-                    windowed[i] = window
-                    i += 1
+                    if len(window) == rows_per_minute:
+                        windowed[i] = window
+                        i += 1
+                        window_number += 1
+                        time = (window.iloc[-1, 0]-window.iloc[0,0])+1
+                        window_time += time
+                        time_difference.append(time)
                     t += increment                     #creates 10 second windows
-                    window_number += 1
-                    time = (window.iloc[-1, 0]-window.iloc[0,0])+1
-                    window_time += time
-                    time_difference.append(time)
 
             windowed_dic[road][mood] = windowed
 
@@ -219,5 +220,5 @@ if __name__ == "__main__":
     # windowing(windowed_dic, rows_per_minute=rows_per_minute)
     windowed_dic = read()
     rows_per_minute = 60 #for online semantics
-    windowing(windowed_dic, rows_per_minute=rows_per_minute)
-
+    w = windowing(windowed_dic, rows_per_minute=rows_per_minute)
+    pass
