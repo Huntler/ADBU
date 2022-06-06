@@ -136,7 +136,7 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
     window_number = 0
     window_time = 0
     time_difference = []
-    for road, road_dic in dict.items():
+    for road, road_dic in dictionary.items():
         i = 0
         print(f"______________________Road: {road} _________________________________")
         for mood, mood_df in road_dic.items():
