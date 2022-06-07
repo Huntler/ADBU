@@ -5,5 +5,9 @@ dependencies:
     - pandas
     - matplotlib
     - opencv
+    - imageio
+    - tqdm
     - pip:
       - scikit-learn
+      - pytorch
+      - tensorboard
