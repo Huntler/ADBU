@@ -18,3 +18,10 @@ There are two options to train, the first one trains one model based on a provid
 To run multiple trainings corresponding to a set of configuration files, type
 
 ```$ python utils/mutli_train.py --folder <PATH_TO_CONFIG_FOLDER>```
+
+## Tensorboard
+Make sure the conda environment is enabled, then call
+
+```$ tensorboard --logdir=runs```
+
+to show all trainings in tensorboard. Press [here](http://localhost:6006) to access the webpage.
