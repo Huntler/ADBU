@@ -1,0 +1,31 @@
+# specify device on which the model is trained
+device: cpu
+
+# set to 'None' if a new model should be trained, otherwise specify
+# a model's directory
+evaluation: None
+
+# define the dataset arguments
+dataset_args:
+  d_type: train
+  # add window size here?
+
+# define the dataloader arguments
+dataloader_args:
+  batch_size: 1024
+  num_workers: 4
+  shuffle: True
+
+# define the model by setting its class name here, do
+# not forget to register it in utils/config.py
+model_name: SimpleNet
+
+# set the amount of epochs to train and specify intermediate
+# savings
+train_epochs: 150
+save_every: 5
+
+# configure the model
+model_args:
+  tag: SimpleNet/augmentation/default
+  log: True

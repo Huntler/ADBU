@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 
 class BaseModel(nn.Module):
-    def __init__(self, tag: str) -> None:
+    def __init__(self, tag: str, log: bool = True) -> None:
         super(BaseModel, self).__init__()
 
         # enable tensorboard
