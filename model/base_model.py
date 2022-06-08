@@ -14,6 +14,15 @@ from tqdm import tqdm
 
 class BaseModel(nn.Module):
     def __init__(self, tag: str, log: bool = True) -> None:
+        """This base class defines the training loop to train any neural network. Also, this 
+        class handels tensorboard logging and model saving, as well as GPU acceleration if 
+        possible.
+
+        Args:
+            tag (str): The tag of the model, which is also the logging path.
+            log (bool, optional): Enables logging (or disables it if its set to False). 
+            Defaults to True.
+        """
         super(BaseModel, self).__init__()
 
         # enable tensorboard
@@ -47,6 +56,11 @@ class BaseModel(nn.Module):
         return self.__device_name
 
     def use_device(self, device: str) -> None:
+        """This method moves the model to the given device. 
+
+        Args:
+            device (str): The device as string ("cpu", "cuda", ...)
+        """
         self.__device = device
         self.to(self.__device)
 
@@ -84,6 +98,16 @@ class BaseModel(nn.Module):
         raise NotImplementedError
 
     def learn(self, train, validate=None, test=None, epochs: int = 1, verbose: bool = False):
+        """This method trains the model using the trainset. A validation- and testset can be specified 
+        to measure the models generalization.
+
+        Args:
+            train (_type_): Dataloader of trainset.
+            validate (_type_, optional): Dataloader of validationset. Defaults to None.
+            test (_type_, optional): Dataloader of testset. Defaults to None.
+            epochs (int, optional): Amount of epochs to train. Defaults to 1.
+            verbose (bool, optional): Enables or disables progressbar. Defaults to False.
+        """
         # set the model into training mode
         self.train()
 
@@ -144,9 +168,6 @@ class BaseModel(nn.Module):
         Args:
             dataloader (_type_): The dataloader which contains value, not used for training.
             step (int): The step of the logger.
-
-        Returns:
-            float: The model's accuracy.
         """
         self.eval()
         accuracies = []
@@ -184,9 +205,6 @@ class BaseModel(nn.Module):
         Args:
             dataloader (_type_): The dataloader which contains value, not used for training.
             step (int): The step of the logger.
-
-        Returns:
-            float: The model's accuracy.
         """
         self.eval()
         accuracies = []
