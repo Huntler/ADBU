@@ -3,8 +3,12 @@ import math
 from multiprocessing import freeze_support
 import os
 
+from torch.utils.data import DataLoader
+import torch
+
 # our libraries
 from model.base_model import BaseModel
+from uah_dataset.dataset import Dataset
 from utils.config import config
 
 
@@ -14,19 +18,18 @@ config_dict = None
 # TODO: initialize dataloader here
 def prepare_data(mode: str):
     if mode == "train":
-        # dataset = Dataset(**config_dict["dataset_args"])
-        # split_sizes = [int(math.ceil(len(dataset) * 0.8)), int(math.floor(len(dataset) * 0.2))]
-        # trainset, valset = torch.utils.data.random_split(dataset, split_sizes)
+        dataset = Dataset(**config_dict["dataset_args"])
+        split_sizes = [int(math.ceil(len(dataset) * 0.8)), int(math.floor(len(dataset) * 0.2))]
+        trainset, valset = torch.utils.data.random_split(dataset, split_sizes)
 
-        # trainloader = Dataloader(trainset, **config_dict["dataloader_args"])
-        # validationloader = Dataloader(valset, **config_dict["dataloader_args"])
-        # return trainloader, validationloader
-        pass
+        trainloader = DataLoader(trainset, **config_dict["dataloader_args"])
+        validationloader = DataLoader(valset, **config_dict["dataloader_args"])
+        return trainloader, validationloader
+
     if mode == "test":
-        # dataset = Dataset(**config_dict["dataset_args"])
-        # dataloader = Dataloader(dataset, pin_memory=True)
-        # return dataloader
-        pass
+        dataset = Dataset(**config_dict["dataset_args"])
+        dataloader = DataLoader(dataset, pin_memory=True)
+        return dataloader
 
 
 # TODO: initialize model here
@@ -95,3 +98,4 @@ if __name__ == "__main__":
 
     # load a configuration file
     config_dict = config.get_args(args.train_config)
+    train()

@@ -18,7 +18,7 @@ dataloader_args:
 
 # define the model by setting its class name here, do
 # not forget to register it in utils/config.py
-model_name: SimpleNet
+model_name: Multimodal_v1
 
 # set the amount of epochs to train and specify intermediate
 # savings
@@ -27,5 +27,5 @@ save_every: 5
 
 # configure the model
 model_args:
-  tag: SimpleNet/augmentation/default
+  tag: Multimodal_v1/augmentation/default
   log: True
