@@ -11,4 +11,5 @@ dependencies:
     - pip:
       - scikit-learn
       - pytorch
+      - torchvision
       - tensorboard
