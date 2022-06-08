@@ -6,8 +6,11 @@ import copy
 import matplotlib.pyplot as plt
 import os
 import imageio
+from sklearn.utils import shuffle
 
 from uah_dataset.pandas_importer import UAHDataset
+
+from sklearn.preprocessing import LabelEncoder
 
 
 # TODO: find missing headers: have a look into their data reader again
@@ -134,6 +137,7 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
     window_number = 0
     window_time = 0
     time_difference = []
+
     for road, road_dic in dictionary.items():
         i = 0
         print(f"______________________Road: {road} _________________________________")
@@ -154,7 +158,6 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
                     time_difference.append(time)
 
             windowed_dic[road][mood] = windowed
-
     print(f"Average window timelapse: {window_time/window_number}")
     print(f"Number of windows: {window_number}")
     plt.hist(time_difference, bins = 120)
@@ -211,21 +214,21 @@ def reshaping_to_numpy(dataf : pd.DataFrame):
     window_size = 400
     feature_size = 40
     train = np.empty([0,window_size, feature_size])
-    labels = np.empty([0])
+    labels = np.empty([0,3], dtype=int)
     for road, road_dic in dataf.items():
         for mood, mood_df in road_dic.items():
             if "NORMAL" in mood:
-                label = "normal"
+                label = np.array([1,0,0], dtype=int)
             elif "AGGRESSIVE" in mood:
-                label ='aggressive'
+                label = np.array([0,1,0], dtype=int)
             elif "DROWSY" in mood:
-                label = "drowsy"
+                label = np.array([0,0,1], dtype=int)
             else:
-                print('something went wrong with the labels!!!!!')
+                raise RuntimeError(mood , " does not correspond to any existing labels")
 
             for i in mood_df:
                 train = np.concatenate((train, mood_df[i].values[np.newaxis,...]), axis=0)
-                labels = np.concatenate((labels, [label]), axis=0)
+                labels = np.concatenate((labels, label[np.newaxis,...]), axis=0)
             print('Iteration passed')
     print(train.shape)
     print(labels.shape)
@@ -236,17 +239,42 @@ def reshaping_to_numpy(dataf : pd.DataFrame):
 
 
 if __name__ == "__main__":
-    """windowed_dic = copy.deepcopy(road_type_dict)
+    '''windowed_dic = copy.deepcopy(road_type_dict)
     rows_per_minute = 400  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
     train,labels = reshaping_to_numpy(online_semantic)
 
+    train,labels  = shuffle(train,labels)
+
     np.save('./train', train)
-    np.save('./labels', labels)
-"""
+    np.save('./labels', labels)'''
+
     train = np.load('./train.npy', allow_pickle=True)
     labels = np.load('./labels.npy', allow_pickle=True)
-    print(labels)
+
+    train_processed = train
+
+    idx_OUT_columns = [7, 36,38,39]
+    idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
+    extractedData = train_processed[:,:, idx_IN_columns]
+    print(extractedData.shape)
+    fp = np.memmap("./train_processed.dat", dtype='float32', mode='w+', shape=extractedData.shape)
+    fp[:] = extractedData[:]
+    fp.flush()
+
+
+    labels_processed = labels
+    fp = np.memmap("./labels_processed.dat", dtype='int', mode='w+', shape=labels_processed.shape)
+    fp[:] = labels_processed[:]
+    fp.flush()
+    '''e = np.random.rand(10,12,21)
+
+    shuffler = np.random.permutation(len(e))
+    np.save('./test', e[shuffler])
+    f = np.load('./test.npy')
+    print(f[0])'''
+
+    #print(labels[0])
     #windowed_dic = read()
     #rows_per_minute = 60 #for online semantics
     #data = windowing(windowed_dic, rows_per_minute=rows_per_minute)
