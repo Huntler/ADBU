@@ -15,7 +15,7 @@ from utils.config import config
 config_dict = None
 
 
-# TODO: initialize dataloader here
+# initialize dataloader here
 def prepare_data(mode: str):
     if mode == "train":
         dataset = Dataset(**config_dict["dataset_args"])
@@ -32,7 +32,7 @@ def prepare_data(mode: str):
         return dataloader
 
 
-# TODO: initialize model here
+# initialize model here
 def prepare_model():
     # load model flag, which decides wether the model is trained or evaluated
     load_flag = False if config_dict["evaluation"] == "None" else True

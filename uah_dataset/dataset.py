@@ -20,9 +20,9 @@ class Dataset(torch.utils.data.Dataset):
         self.labels = np.memmap('../labels.npy', dtype=image_dtype, mode='w+', shape=image_shape)"""
 
         # load all matrices
-        self.sensor_data = np.memmap('./train_processed.dat', dtype='float32', mode='r', shape=(2937, 400, 36))
-        self.image_data = np.random.rand(2937, 400, 2, 2, 1)
-        self.labels = np.memmap('./labels_processed.dat', dtype='int', mode='r', shape=(2937, 3))
+        self.sensor_data = np.memmap('./uah_dataset/processed_dataset/train_processed.dat', dtype='float32', mode='r', shape=(2937, 400, 36))
+        self.image_data = np.random.rand(2937, 400, 2, 2, 3) # 224, 224, 3
+        self.labels = np.memmap('./uah_dataset/processed_dataset/labels_processed.dat', dtype='int', mode='r', shape=(2937, 3))
 
         if d_type == "train":
             # TODO: training data
