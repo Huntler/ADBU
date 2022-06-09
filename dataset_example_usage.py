@@ -28,7 +28,7 @@ from sklearn.preprocessing import LabelEncoder
 # UAHDataset(generate_video_frames=True)
 
 # create the dataset
-dataset = UAHDataset()
+#dataset = UAHDataset()
 # print("Dataset:", dataset.latest)
 # print("Drivers:", dataset.drivers)
 
@@ -46,7 +46,7 @@ dataset = UAHDataset()
 # # note: this should work, but we loose information about when a time series resets.
 # # This could prevent learning later on.
 # print("Info of all drivers")'''
-road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+#road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
 
 # '''roads = [_ for _ in road_type_dict.keys()]
 # print("# Roads:", sum([len(road_type_dict[_]) for _ in roads]))
@@ -118,12 +118,6 @@ history = model.fit(X_train, X_train, epochs=200, batch_size=16, verbose=2, vali
 # print(kmeans.labels_)
 
 
-
-
-
-
-
-
 def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold : int = 60, increment : int = 10) -> dict:
     """
     Creates windows, for every
@@ -165,9 +159,6 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
     plt.xlabel("Seconds")
     #plt.show()
     return windowed_dic
-
-
-
 
 
 
@@ -235,46 +226,45 @@ def reshaping_to_numpy(dataf : pd.DataFrame):
     return train, labels
 
 
-
-
-
 if __name__ == "__main__":
-    '''windowed_dic = copy.deepcopy(road_type_dict)
+    '''#Read data from files and store to panda frames
+    dataset = UAHDataset()
+    road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+    #Windowing the dataset
+    windowed_dic = copy.deepcopy(road_type_dict)
     rows_per_minute = 400  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-    train,labels = reshaping_to_numpy(online_semantic)
 
-    train,labels  = shuffle(train,labels)
+    #Reshaping to numpy
+    train,labels = reshaping_to_numpy(online_semantic)
+    train,labels = shuffle(train,labels)
 
     np.save('./train', train)
-    np.save('./labels', labels)'''
+    np.save('./labels', labels)
+'''
 
+    # TODO Florene you can work here
+
+    #read data
     train = np.load('./train.npy', allow_pickle=True)
     labels = np.load('./labels.npy', allow_pickle=True)
 
     train_processed = train
 
+    #get rid of some features
     idx_OUT_columns = [7, 36,38,39]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:,:, idx_IN_columns]
-    print(extractedData.shape)
+
+    #save data to .dat format
     fp = np.memmap("./train_processed.dat", dtype='float32', mode='w+', shape=extractedData.shape)
     fp[:] = extractedData[:]
     fp.flush()
-
+    del fp
 
     labels_processed = labels
-    fp = np.memmap("./labels_processed.dat", dtype='int', mode='w+', shape=labels_processed.shape)
-    fp[:] = labels_processed[:]
-    fp.flush()
-    '''e = np.random.rand(10,12,21)
+    dp = np.memmap("./labels_processed.dat", dtype='int', mode='w+', shape=labels_processed.shape)
+    dp[:] = labels_processed[:]
+    dp.flush()
 
-    shuffler = np.random.permutation(len(e))
-    np.save('./test', e[shuffler])
-    f = np.load('./test.npy')
-    print(f[0])'''
-
-    #print(labels[0])
-    #windowed_dic = read()
-    #rows_per_minute = 60 #for online semantics
-    #data = windowing(windowed_dic, rows_per_minute=rows_per_minute)
+    del dp
