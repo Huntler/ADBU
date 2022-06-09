@@ -8,7 +8,7 @@ class ImageModel(nn.Module):
         """This class uses a pre-trained resnet to extract features from images. The 
         output of resnet is passed into a small dense neural network, which is used 
         to focus on relevant features only. The output of this network is the output 
-        of the last Linear layer which has 64 nodes. No activation function is applied 
+        of the last Linear layer which has 256 nodes. No activation function is applied 
         on the last layer.
         """
         super(ImageModel).__init__()
@@ -22,8 +22,6 @@ class ImageModel(nn.Module):
         # to focus on needed features extracted by resnet
         self.__dense_1 = nn.Linear(512, 384)
         self.__dense_2 = nn.linear(384, 256)
-        self.__dense_3 = nn.Linear(256, 128)
-        self.__dense_4 = nn.Linear(128, 64)
     
     def forward(self, x) -> Any:
         x = self.__resnet(x)
@@ -33,10 +31,4 @@ class ImageModel(nn.Module):
         x = nn.ReLU(x)
 
         x = self.__dense_2(x)
-        x = nn.ReLU(x)
-
-        x = self.__dense_3(x)
-        x = nn.ReLU(x)
-
-        x = self.__dense_4(x)
         return x

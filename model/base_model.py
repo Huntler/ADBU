@@ -97,7 +97,7 @@ class BaseModel(nn.Module):
         """
         raise NotImplementedError
 
-    def learn(self, train, validate=None, test=None, epochs: int = 1, verbose: bool = False):
+    def learn(self, train, validate=None, test=None, epochs: int = 1, save_every: int = -1, verbose: bool = False):
         """This method trains the model using the trainset. A validation- and testset can be specified 
         to measure the models generalization.
 
@@ -106,6 +106,8 @@ class BaseModel(nn.Module):
             validate (_type_, optional): Dataloader of validationset. Defaults to None.
             test (_type_, optional): Dataloader of testset. Defaults to None.
             epochs (int, optional): Amount of epochs to train. Defaults to 1.
+            save_every (int, optional): Save the model each provided epoch, -1 disables this 
+            functionality. Defaults to -1.
             verbose (bool, optional): Enables or disables progressbar. Defaults to False.
         """
         # set the model into training mode
@@ -120,12 +122,13 @@ class BaseModel(nn.Module):
 
                 # run for each batch in training set
                 for X, y in train_iterator:
-                    X = X.to(self.__device)
+                    X_sensor = X[0].to(self.__device)
+                    X_image = X[1].to(self.__device)
                     y = y.to(self.__device)
 
                     # perform the presiction and measure the loss between the prediction
                     # and the expected output
-                    pred_y = self(X)
+                    pred_y = self((X_sensor, X_image))
 
                     # calculate the gradient using backpropagation of the loss
                     loss = self.loss_fn(pred_y, y)
@@ -159,6 +162,12 @@ class BaseModel(nn.Module):
 
                 logger.count(CustomMetricsLogger.EPOCH)
 
+            # save the model every X epoch
+            if e % save_every == 0:
+                self.eval()
+                BaseModel.save_to_default(self)
+                self.train()
+
         self.eval()
 
     def validate(self, dataloader, step: int) -> float:
@@ -181,7 +190,10 @@ class BaseModel(nn.Module):
             # predict all y's of the validation set and append the model's accuracy 
             # to the list
             for X, y in dataloader:
-                _y = self.predict(X, as_list=False)
+                X_sensor = X[0].to(self.__device)
+                X_image = X[1].to(self.__device)
+
+                _y = self((X_sensor, X_image))
 
                 y = y.to(self.__device)
                 loss = self.loss_fn(_y, y)
@@ -218,7 +230,11 @@ class BaseModel(nn.Module):
             # predict all y's of the validation set and append the model's accuracy 
             # to the list
             for X, y in dataloader:
-                _y = self.predict(X, as_list=False)
+                X_sensor = X[0].to(self.__device)
+                X_image = X[1].to(self.__device)
+
+                _y = self((X_sensor, X_image))
+
 
                 y = y.to(self.__device)
                 loss = self.loss_fn(_y, y)

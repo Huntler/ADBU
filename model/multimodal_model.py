@@ -1,14 +1,57 @@
+from unicodedata import bidirectional
+from torch.optim.lr_scheduler import ExponentialLR
+from torch import nn
+import torch
+
+# our code
 from model.base_model import BaseModel
+from model.image_model import ImageModel
 
 
 class MultimodalModel(BaseModel):
     def __init__(self, tag: str, log: bool = True) -> None:
-        super(MultimodalModel).__init__(tag, log)
+        self.writer = None        
+        super(MultimodalModel, self).__init__(tag, log)
 
-        # TODO: add image model
-        # TODO: add sensor model
-        # TODO: add concatenate
-        # TODO: add LSTM
-        # TODO: add classifier output
+        # add image model
+        self.__image_module = ImageModel()
 
-        # TODO: define optimizer, loss function and scheduler as BaseModel needs
+        # add sensor model
+        self.__sensor_module = None
+
+        # add LSTM
+        self.__lstm = nn.LSTM(36 + 256, 128, num_layers=2, dropout=0.1, bidirectional=False, batch_first=True)
+
+        # add classifier output inclunding some dense layers
+        self.__dense = nn.Sequential(
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 3)
+        )
+
+        # define optimizer, loss function and scheduler as BaseModel needs
+        self.loss_func = torch.nn.CrossEntropyLoss()
+        self.optim = torch.optim.AdamW(self.parameters(), lr=0.003, betas=[0.99, 0.999], weight_decay=0.05)
+        self.scheduler = ExponentialLR(self._optim, gamma=0.9)
+    
+    def forward(self, X):
+        x_sensor, x_image = X
+
+        # pass the image data through the image model
+        x_image = self.__image_module(x_image)
+        x_image = nn.ReL(x_image)
+
+        # pass the sensor data through the sensor model
+        x_sensor = self.__sensor_module(x_sensor)
+        x_sensor = nn.ReLU(x_sensor)
+
+        # concatenate both data paths
+        x = torch.concat((x_sensor, x_image))
+
+        # pass the combination of both into a LSTM
+        x, _ = self.__lstm(x)
+
+        # FIXME: this failes, because the dimension of x is wrong
+        x = self.__dense(x)
+
+        return x
