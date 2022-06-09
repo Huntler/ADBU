@@ -8,7 +8,7 @@ from torch.nn import Module
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.optimizer import Optimizer
 from torch.utils.tensorboard import SummaryWriter
-from model.tb_logger import CustomMetricsLogger
+from utils.tb_logger import CustomMetricsLogger
 from tqdm import tqdm
 
 
