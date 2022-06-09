@@ -6,6 +6,7 @@ import torch
 # our code
 from model.base_model import BaseModel
 from model.image_model import ImageModel
+from model.sensor_model import SensorModel
 
 
 class MultimodalModel(BaseModel):
@@ -17,7 +18,7 @@ class MultimodalModel(BaseModel):
         self.__image_module = ImageModel()
 
         # add sensor model
-        self.__sensor_module = None
+        self.__sensor_module = SensorModel()
 
         # add LSTM
         self.__lstm = nn.LSTM(36 + 256, 128, num_layers=2, dropout=0.1, bidirectional=False, batch_first=True)
@@ -39,11 +40,14 @@ class MultimodalModel(BaseModel):
 
         # pass the image data through the image model
         x_image = self.__image_module(x_image)
-        x_image = nn.ReL(x_image)
+        x_image = torch.relu(x_image)
 
         # pass the sensor data through the sensor model
         x_sensor = self.__sensor_module(x_sensor)
-        x_sensor = nn.ReLU(x_sensor)
+        x_sensor = torch.relu(x_sensor)
+
+        # the mean of the last weights of x_sensor and x_image can be compared
+        # to determine the image- or sensordata importance
 
         # concatenate both data paths
         x = torch.concat((x_sensor, x_image))

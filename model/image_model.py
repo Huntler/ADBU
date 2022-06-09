@@ -1,5 +1,6 @@
 from typing import Any
 from torch import nn
+import torch
 from torchvision.models import resnet50
 
 
@@ -25,10 +26,10 @@ class ImageModel(nn.Module):
     
     def forward(self, x) -> Any:
         x = self.__resnet(x)
-        x = nn.ReLU(x)
+        x = torch.relu(x)
 
         x = self.__dense_1(x)
-        x = nn.ReLU(x)
+        x = torch.relu(x)
 
         x = self.__dense_2(x)
         return x
