@@ -2,6 +2,7 @@
 uah_dataset/UAH-*
 *.npy
 *.dat
+runs/
 
 # VSCode
 .vscode/
