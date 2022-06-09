@@ -12,7 +12,7 @@ class ImageModel(nn.Module):
         of the last Linear layer which has 256 nodes. No activation function is applied 
         on the last layer.
         """
-        super(ImageModel).__init__()
+        super(ImageModel, self).__init__()
 
         # load pre-trained resnet and disable training of weigths
         self.__resnet = resnet50(pretrained=True)
@@ -22,7 +22,7 @@ class ImageModel(nn.Module):
         # add dense layers to the output of resnet, those were tuned
         # to focus on needed features extracted by resnet
         self.__dense_1 = nn.Linear(512, 384)
-        self.__dense_2 = nn.linear(384, 256)
+        self.__dense_2 = nn.Linear(384, 256)
     
     def forward(self, x) -> Any:
         x = self.__resnet(x)
