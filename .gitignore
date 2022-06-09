@@ -1,6 +1,10 @@
 # ADBU related
 uah_dataset/UAH-*
 *.npy
+*.dat
+
+# VSCode
+.vscode/
 
 # MacOS
 .DS_Store
