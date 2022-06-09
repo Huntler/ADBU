@@ -1,8 +1,8 @@
 from typing import Dict
 import yaml
 
-from ..model.multimodal_model import MultimodalModel
-from ..model.base_model import BaseModel
+from model.multimodal_model import MultimodalModel
+from model.base_model import BaseModel
 
 
 class Config:
