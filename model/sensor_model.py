@@ -5,7 +5,7 @@ import torch
 
 class SensorModel(nn.Module):
     def __init__(self) -> None:
-        super(SensorModel).__init__()
+        super(SensorModel, self).__init__()
 
         # 1D convolutional to detect patterns within one feature
         self.__conv_1 = nn.Conv1d(400, 400, 10, stride=2)

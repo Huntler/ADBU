@@ -33,7 +33,7 @@ class MultimodalModel(BaseModel):
         # define optimizer, loss function and scheduler as BaseModel needs
         self.loss_func = torch.nn.CrossEntropyLoss()
         self.optim = torch.optim.AdamW(self.parameters(), lr=0.003, betas=[0.99, 0.999], weight_decay=0.05)
-        self.scheduler = ExponentialLR(self._optim, gamma=0.9)
+        self.scheduler = ExponentialLR(self.optim, gamma=0.9)
     
     def forward(self, X):
         x_sensor, x_image = X
