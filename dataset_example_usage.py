@@ -1,14 +1,12 @@
 import pandas as pd
 import numpy as np
-from sklearn.cluster import KMeans
-#import tensorflow as tf
-import copy
 import matplotlib.pyplot as plt
 import os
-import imageio
+import copy
+from uah_dataset.pandas_importer import UAHDataset
+from uah_dataset.image_process import add_pointers_to_window, dict_with_all_frames_pointed, video_to_frames, create_windowed_frames
 from sklearn.utils import shuffle
 
-from uah_dataset.pandas_importer import UAHDataset
 
 from sklearn.preprocessing import LabelEncoder
 
@@ -28,7 +26,7 @@ from sklearn.preprocessing import LabelEncoder
 # UAHDataset(generate_video_frames=True)
 
 # create the dataset
-dataset = UAHDataset()
+# dataset = UAHDataset()
 # print("Dataset:", dataset.latest)
 # print("Drivers:", dataset.drivers)
 
@@ -46,7 +44,7 @@ dataset = UAHDataset()
 # # note: this should work, but we loose information about when a time series resets.
 # # This could prevent learning later on.
 # print("Info of all drivers")'''
-road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+# road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
 
 # '''roads = [_ for _ in road_type_dict.keys()]
 # print("# Roads:", sum([len(road_type_dict[_]) for _ in roads]))
@@ -182,7 +180,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
     drivers = ['D1','D2','D3','D4','D5','D6']
     roads = ["MOTORWAY", "SECONDARY"]
 
-    headers = ["TimeStamp", "Latitude" , " Longitude", "Total" , "Accel", "Braking", "Turning", "Weaving",
+    headers = ["time", "Latitude" , " Longitude", "Total" , "Accel", "Braking", "Turning", "Weaving",
                 "Drifting", "Oversspeed", "Carfollow", "Normal", "Drowsy", "Aggressive", "Unknown",
                 "Total_last_minute", "Accel_last_minute", "Braking_last_minute" , "Turning_last_minute",
                 "Weaving_last_minute","Drifting_last_minute", "Oversspeed_last_minute", "Carfollow_last_minute",
@@ -198,7 +196,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
             scoresFileName = folder + '/' + direc + '/' + 'SEMANTIC_ONLINE.txt'
             scoresData = np.genfromtxt(scoresFileName, dtype=np.float64, delimiter=' ')
             df = pd.DataFrame(scoresData, columns = headers)
-
+            df['Driver'] = driver
             if road in online_semantics:
                 if mood in online_semantics[road]:
                     online_semantics[road][mood] = pd.concat([online_semantics[road][mood], df])
@@ -234,39 +232,61 @@ def reshaping_to_numpy(dataf : pd.DataFrame):
     print(labels.shape)
     return train, labels
 
-
-
-
+def from_mp4_to_data(index_list):
+    """"
+    This function creates a directory filled with np arrays, one for each window
+    """
+    fps = 400/60
+    # video_to_frames(fps)
+    dataset = UAHDataset()
+    road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+    create_windowed_frames(road_type_dict,index_list)
 
 if __name__ == "__main__":
-    '''windowed_dic = copy.deepcopy(road_type_dict)
-    rows_per_minute = 400  # for dataframe, doesnt work consistently
+    fps = 400/60
+    # video_to_frames(fps)
+
+    # windowed_dic = copy.deepcopy(road_type_dict)
+    windowed_dic = read()
+    rows_per_minute = 60  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-    train,labels = reshaping_to_numpy(online_semantic)
+    shape_0 = 0
+    for road, road_dic in online_semantic.items():
+        for mood, mood_dic in road_dic.items():
+            for df_index, df in mood_dic.items():
+                shape_0 += 1
 
-    train,labels  = shuffle(train,labels)
+    index_list = [i for i in range(shape_0)]
 
+    '''train,labels = reshaping_to_numpy(online_semantic)
+    train,labels  = shuffle(train,labels,index_list)
+    
+    from_mp4_to_data(index_list)
     np.save('./train', train)
     np.save('./labels', labels)'''
-
     train = np.load('./train.npy', allow_pickle=True)
     labels = np.load('./labels.npy', allow_pickle=True)
 
     train_processed = train
 
-    idx_OUT_columns = [7, 36,38,39]
-    idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
-    extractedData = train_processed[:,:, idx_IN_columns]
-    print(extractedData.shape)
-    fp = np.memmap("./train_processed.dat", dtype='float32', mode='w+', shape=extractedData.shape)
-    fp[:] = extractedData[:]
-    fp.flush()
+    # idx_OUT_columns = [7, 36,38,39]
+    # idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
+    # extractedData = train_processed[:,:, idx_IN_columns]
+    # print(extractedData.shape)
+    # fp = np.memmap("./train_processed.dat", dtype='float32', mode='w+', shape=extractedData.shape)
+    # fp[:] = extractedData[:]
+    # fp.flush()
+    #
+    #
+    # labels_processed = labels
+    # fp = np.memmap("./labels_processed.dat", dtype='int', mode='w+', shape=labels_processed.shape)
+    # fp[:] = labels_processed[:]
+    # fp.flush()
+    # print(labels_processed.shape)
+
+    # fp = np.memmap("./images_processed.dat", dtype='int', mode='w+', shape=(shape_0,window_size,224,224))
 
 
-    labels_processed = labels
-    fp = np.memmap("./labels_processed.dat", dtype='int', mode='w+', shape=labels_processed.shape)
-    fp[:] = labels_processed[:]
-    fp.flush()
     '''e = np.random.rand(10,12,21)
 
     shuffler = np.random.permutation(len(e))
@@ -274,7 +294,3 @@ if __name__ == "__main__":
     f = np.load('./test.npy')
     print(f[0])'''
 
-    #print(labels[0])
-    #windowed_dic = read()
-    #rows_per_minute = 60 #for online semantics
-    #data = windowing(windowed_dic, rows_per_minute=rows_per_minute)

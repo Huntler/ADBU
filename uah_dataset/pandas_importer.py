@@ -80,6 +80,7 @@ class UAHDataset:
                 c = complete.get(road_type, {})
                 for label, data in label_dict.items():
                     l = c.get(label, pandas.DataFrame())
+                    data["Driver"] = driver
                     if l.empty:
                         l = data
                     else:
