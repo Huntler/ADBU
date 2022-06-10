@@ -233,28 +233,28 @@ def from_mp4_to_data(index_list):
     This function creates a directory filled with np arrays, one for each window
     """
     fps = 400/60
-    # video_to_frames(fps)
+    # video_to_frames(fps) #requires ffmpeg
     dataset = UAHDataset()
     road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
     create_windowed_frames(road_type_dict,index_list)
 
 if __name__ == "__main__":
-    '''#Read data from files and store to panda frames
+    #Read data from files and store to panda frames
     dataset = UAHDataset()
     road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
     #Windowing the dataset
     windowed_dic = copy.deepcopy(road_type_dict)
     rows_per_minute = 400  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-
+    indices = [i for i in range(2937)]
     #Reshaping to numpy
     train,labels = reshaping_to_numpy(online_semantic)
-    train,labels = shuffle(train,labels,index_list)
-    from_mp4_to_data(index_list)
+    train,labels = shuffle(train,labels,indices)
+    from_mp4_to_data(indices)
 
     np.save('./train', train)
     np.save('./labels', labels)
-'''
+    np.save('./indices', indices)
 
     # TODO Florene you can work here
 
