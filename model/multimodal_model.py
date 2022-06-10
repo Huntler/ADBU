@@ -21,17 +21,18 @@ class MultimodalModel(BaseModel):
         self.__sensor_module = SensorModel()
 
         # add LSTM
-        self.__lstm = nn.LSTM(36 + 256, 128, num_layers=2, dropout=0.1, bidirectional=False, batch_first=True)
+        self.__lstm = nn.LSTM(279, 128, num_layers=2, dropout=0.1, bidirectional=False, batch_first=True)
 
         # add classifier output inclunding some dense layers
         self.__dense = nn.Sequential(
-            nn.Linear(128, 64),
+            nn.Flatten(),
+            nn.Linear(400 * 128, 64),
             nn.ReLU(),
             nn.Linear(64, 3)
         )
 
         # define optimizer, loss function and scheduler as BaseModel needs
-        self.loss_func = torch.nn.CrossEntropyLoss()
+        self.loss_fn = torch.nn.CrossEntropyLoss()
         self.optim = torch.optim.AdamW(self.parameters(), lr=0.003, betas=[0.99, 0.999], weight_decay=0.05)
         self.scheduler = ExponentialLR(self.optim, gamma=0.9)
     
@@ -50,12 +51,10 @@ class MultimodalModel(BaseModel):
         # to determine the image- or sensordata importance
 
         # concatenate both data paths
-        x = torch.concat((x_sensor, x_image))
+        x = torch.cat((x_sensor, x_image), -1)
 
         # pass the combination of both into a LSTM
         x, _ = self.__lstm(x)
-
-        # FIXME: this failes, because the dimension of x is wrong
         x = self.__dense(x)
 
         return x
