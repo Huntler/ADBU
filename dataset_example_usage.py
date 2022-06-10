@@ -206,7 +206,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
 
 def reshaping_to_numpy(dataf : pd.DataFrame):
     window_size = 400
-    feature_size = 40
+    feature_size = 41
     train = np.empty([0,window_size, feature_size])
     labels = np.empty([0,3], dtype=int)
     for road, road_dic in dataf.items():
@@ -233,28 +233,28 @@ def from_mp4_to_data(index_list):
     This function creates a directory filled with np arrays, one for each window
     """
     fps = 400/60
-    # video_to_frames(fps)
+    # video_to_frames(fps) #requires ffmpeg
     dataset = UAHDataset()
     road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
     create_windowed_frames(road_type_dict,index_list)
 
 if __name__ == "__main__":
-    '''#Read data from files and store to panda frames
+    #Read data from files and store to panda frames
     dataset = UAHDataset()
     road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
     #Windowing the dataset
     windowed_dic = copy.deepcopy(road_type_dict)
     rows_per_minute = 400  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-
+    indices = [i for i in range(2898)]
     #Reshaping to numpy
     train,labels = reshaping_to_numpy(online_semantic)
-    train,labels = shuffle(train,labels,index_list)
-    from_mp4_to_data(index_list)
+    train,labels, indices = shuffle(train,labels,indices)
+    from_mp4_to_data(indices)
 
     np.save('./train', train)
     np.save('./labels', labels)
-'''
+    np.save('./indices', indices)
 
     # TODO Florene you can work here
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     train_processed = train
 
     #get rid of some features
-    idx_OUT_columns = [7, 36,38,39]
+    idx_OUT_columns = [7, 36,38,39,40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:,:, idx_IN_columns]
 
