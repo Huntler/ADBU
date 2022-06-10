@@ -206,7 +206,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
 
 def reshaping_to_numpy(dataf : pd.DataFrame):
     window_size = 400
-    feature_size = 40
+    feature_size = 41
     train = np.empty([0,window_size, feature_size])
     labels = np.empty([0,3], dtype=int)
     for road, road_dic in dataf.items():
@@ -246,10 +246,10 @@ if __name__ == "__main__":
     windowed_dic = copy.deepcopy(road_type_dict)
     rows_per_minute = 400  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-    indices = [i for i in range(2937)]
+    indices = [i for i in range(2898)]
     #Reshaping to numpy
     train,labels = reshaping_to_numpy(online_semantic)
-    train,labels = shuffle(train,labels,indices)
+    train,labels, indices = shuffle(train,labels,indices)
     from_mp4_to_data(indices)
 
     np.save('./train', train)
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     train_processed = train
 
     #get rid of some features
-    idx_OUT_columns = [7, 36,38,39]
+    idx_OUT_columns = [7, 36,38,39,40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:,:, idx_IN_columns]
 
