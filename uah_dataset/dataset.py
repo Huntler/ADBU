@@ -20,11 +20,10 @@ class Dataset(torch.utils.data.Dataset):
         self.labels = np.memmap('../labels.npy', dtype=image_dtype, mode='w+', shape=image_shape)"""
 
         # load all matrices
-        self.sensor_data = np.memmap('./processed_dataset/train_processed.dat', dtype='float32', mode='r', shape=(2937, 400, 36))
-        self.image_data = np.random.rand(2937, 400, 2, 2, 3) # 224, 224, 3
-        self.labels = np.memmap('./processed_dataset/labels_processed.dat', dtype='int', mode='r', shape=(2937, 3))
+        self.sensor_data = np.memmap('./uah_dataset/processed_dataset/train_processed.dat', dtype='float32', mode='r', shape=(2937, 400, 36))
+        self.image_data = np.random.rand(2937, 400, 2, 2, 3).astype(np.float32) # 224, 224, 3
+        self.labels = np.memmap('./uah_dataset/processed_dataset/labels_processed.dat', dtype='int', mode='r', shape=(2937, 3))
         self.indices = [i for i in range(2937)]
-
 
         if d_type == "train":
             # TODO: training data
@@ -46,7 +45,8 @@ class Dataset(torch.utils.data.Dataset):
         # TODO maybe do a check before returning
         #print(self.labels)
         # image_d = np.load(f"windowed_frames/{self.indices[index]}.npy")
-        return ((self.sensor_data[index], self.image_data[index]), self.labels[index])
+        dummy_image = np.random.rand(400, 48, 48, 3).astype(np.float32)
+        return ((self.sensor_data[index], dummy_image), self.labels[index].astype(np.float32))
 
 
 if __name__ == "__main__":
