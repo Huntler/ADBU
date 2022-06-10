@@ -140,7 +140,7 @@ class BaseModel(nn.Module):
 
                     losses.append(loss.item())
                     logger.sample_log("sample_loss", loss)
-                    logger.count(CustomMetricsLogger.SAMPLE, value=X.size(0))
+                    logger.count(CustomMetricsLogger.SAMPLE, value=X_sensor.size(0))
 
                 # log for each batch we trained
                 mean_loss = np.mean(losses, axis=0)

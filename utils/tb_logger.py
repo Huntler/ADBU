@@ -61,8 +61,8 @@ class CustomMetricsLogger():
         Raises:
             RuntimeError: Is thrown if a wrong mode is given.
         """
-        if value < 0 or value > 2:
-            raise RuntimeError("Value has to be: 0 (SAMPLE), 1 (EPOCH), 2 (BOTH).")
+        if mode < 0 or mode > 2:
+            raise RuntimeError(f"Mode has to be: 0 (SAMPLE), 1 (EPOCH), 2 (BOTH). Got {mode}")
         
         if mode == CustomMetricsLogger.SAMPLE:
             self.__sample_pointer += value
