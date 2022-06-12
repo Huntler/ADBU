@@ -207,7 +207,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
     return online_semantics
 
 def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
-    feature_size = 41
+    feature_size = list(list(list(dataf.values())[0].values())[0].values())[0].shape[1] #TODO change that again
     train = np.empty([0,window_size, feature_size])
     labels = np.empty([0,3], dtype=int)
     for road, road_dic in dataf.items():
