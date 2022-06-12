@@ -10,6 +10,10 @@ After installation, the environment can be activated by calling
 
 ```$ conda activate adbu```
 
+## Prepare dataset
+
+```$ python dataset_example_usage.py --window_size <int: window_size>```
+
 ## Train
 There are two options to train, the first one trains one model based on a provided configuration file. In order to do so, run
 
