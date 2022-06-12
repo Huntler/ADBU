@@ -258,19 +258,46 @@ def sensor_data_prepare(window_size):
     np.save(npy_new_dir + '\\labels_' + now.strftime("%m_%d_%Y-%H_%M_%S"), labels)
 
 
-    # TODO Florene you can work here
+
     parent_dir = '.\\uah_dataset\\processed_dataset\\sensor\\npy\\window_' + str(args.window_size)
     files = os.listdir(parent_dir)
     # read data
     train = np.load(parent_dir + "\\" + files[1], allow_pickle=True)
     labels = np.load(parent_dir + "\\" + files[0], allow_pickle=True)
-
     train_processed = train
 
+    #train = np.load("train.npy",allow_pickle=True)
+    #labels = np.load("labels.npy",allow_pickle=True)
+
+
+
     # get rid of some features
-    idx_OUT_columns = [7, 36, 38, 39, 40]
+    # 6: Latitude used to query OSM
+    # 11: Latitude
+    # 12: Longitude
+    # 13: Altitude
+    # 21: Unknown
+    # 29: Roll angle
+    # 30: Pitch angle
+    # 31: Yaw angle
+    # 37: Phi
+
+    'TO DISCUSS' \
+    '26: X accel filtered by KF (Gs)' \
+    '27: Y accel filtered by KF (Gs)' \
+    '28: Z accel filtered by KF (Gs)'
+
+
+    idx_OUT_columns = [6, 7, 11, 12, 13, 21, 29, 30, 31, 36, 37, 38, 39, 40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:, :, idx_IN_columns]
+
+    #Normalize train by feautures (column)
+    for j in range (len(extractedData)):
+        df1=pd.DataFrame(extractedData[j])
+        for i in range (1,27):
+            df1[i] = df1[i] / (df1[i].abs().max()+0.01)
+        extractedData[j]=df1.to_numpy()
 
     # save data to .dat format
     dat_new_dir = '.\\uah_dataset\\processed_dataset\\sensor\\dat\\window_' + str(args.window_size)
@@ -304,6 +331,9 @@ def sensor_data_prepare(window_size):
 
 if __name__ == "__main__":
     # Create the parser
+    dataset = UAHDataset()
+    road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+
     parser = argparse.ArgumentParser(description='Preprocessing stage')
     parser.add_argument('--window_size', type=int, help='window_size', required=True)
 
