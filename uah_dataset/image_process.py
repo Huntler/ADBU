@@ -29,15 +29,18 @@ def add_pointers_to_window(df, roadtype: str, mood : str, fps : float = 1, windo
     frame_pointers = []
     for file in os.listdir(folder):
         if name in file:
-            frames_path = f"{folder}/{file}/frames_{fps:.0f}" #Finds the folder where the frames are stored as png
-    for i in range((final_frame-window_size), final_time):  #the frames number to save, the step is the reciprocal of the desired fps, times the og fps
-        path_to_frame = f"{frames_path}/frame{i:06d}.png"
+            frames_path = f"{folder}/{file}/frames_rgb_{fps:.0f}" #Finds the folder where the frames are stored as png
+    last_catch = f"{frames_path}/frame{1:06d}.png"
+    for i in range((final_frame-window_size), final_frame):  #the frames number to save, the step is the reciprocal of the desired fps, times the og fps
+        path_to_frame = f"{frames_path}/frame{(i+1):06d}.png"
         if not os.path.isfile(path_to_frame):
-            # print(f"file not found: {path_to_frame}")
+            print(f"File not found: {path_to_frame}, appending last")
+            frame_pointers.append(last_catch)
             continue
 
-        frame_pointers.append(path_to_frame)
-        # print(f"file found: {path_to_frame}")
+        last_catch = path_to_frame
+
+        frame_pointers.append(last_catch)
 
 
     return (df, frame_pointers)
@@ -71,7 +74,7 @@ def dict_with_all_frames_pointed(pointers):
             if point in dictionary:
                 continue #no need to reload the image
 
-            dictionary[point] = imageio.imread(point)[:,:,0]
+            dictionary[point] = imageio.imread(point)#[:,:,0]
 
     print(f"\nTime taken to load: {(time.time() - start_time):.2f}s")
     return dictionary
@@ -116,17 +119,17 @@ def video_to_frames(fps : int = 1) -> None:
                     f"Video file for driver {driver} with behaviour {behaviour} on road {road_type} does not exist.")
 
 
-            # create a frame folder in which all found frames are stored
+            # create a frame folder in which all frames are stored
             if not os.path.exists(f"{folder_driver}/{rec}/frames_rgb_{fps:.0f}"):
                 os.mkdir(f"{folder_driver}/{rec}/frames_rgb_{fps:.0f}")
             else: #if it already exist, we can either:
-                # shutil.rmtree(f"{folder_driver}/{rec}/frames_{fps}")  #remove and create a new directory
-                # os.mkdir(f"{folder_driver}/{rec}/frames_{fps}")
+                shutil.rmtree(f"{folder_driver}/{rec}/frames_rgb_{fps:.0f}")  #remove and create a new directory
+                os.mkdir(f"{folder_driver}/{rec}/frames_rgb_{fps:.0f}")
 
                 # raise RuntimeError("Frames were extracted, nothing to do.") #raise error
 
-                print(f"Continued {folder}/{rec}")  #skip the folder
-                continue
+                print(f"File found {folder}/{rec}")  #skip the folder
+                # continue
 
             os.system(f"ffmpeg -i {folder_driver}/{rec}/{video_file} -vf fps={fps},scale=224x224 {folder_driver}/{rec}/frames_rgb_{fps:.0f}/frame%6d.png")
 
@@ -134,7 +137,7 @@ def video_to_frames(fps : int = 1) -> None:
 
 
 
-def create_windowed_frames(semantics, index_list):
+def create_windowed_frames(window_size, indices, n_samples, online_semantic):
     """
     This function will create a numpy array (400,224,224), so that it can be called by the __getitem__ from the data set
 
@@ -143,29 +146,31 @@ def create_windowed_frames(semantics, index_list):
     :return: None
     """
 
-    window_size = 400
-    fps  = 400/60
+    fps  = window_size/60
     idx = 0
-    for road, road_dic in semantics.items():
+    path_to_save = f"uah_dataset/processed_dataset/video/window_{window_size}"
+    if os.path.exists(path_to_save):
+        shutil.rmtree(path_to_save)
+
+    os.mkdir(path_to_save)
+    for road, road_dic in online_semantic.items():
         for mood, mood_dic in road_dic.items():
-            delta = 0
             list_pointers = []
             for df_index, df in mood_dic.items():
-                list_pointers.append(add_pointers_to_window(df, road, mood, fps=fps)[1])
+                list_pointers.append(add_pointers_to_window(df, road, mood, fps=fps, window_size=window_size)[1])
             dic = dict_with_all_frames_pointed(list_pointers)
+
             for i in range(len(list_pointers)):
-                if len(list_pointers[i]) < window_size:
+                if not len(list_pointers[i]) == window_size:
+                    print(f"Lenght list of pointers {len(list_pointers[i])}")
                     continue
-                window_images = np.reshape(dic[list_pointers[i][0]], (1,224,224))
+                window_images = np.reshape(dic[list_pointers[i][0]], (1,224,224,3))
                 for pointer in list_pointers[i][1:]:
-                    window_images = np.concatenate((window_images, np.reshape(dic[pointer], (1,224,224))), axis = 0)
-                if not window_images.shape[0] == 400:
-                    print("WTF")
+                    window_images = np.concatenate((window_images, np.reshape(dic[pointer], (1,224,224,3))), axis = 0)
 
 
-
-                path_to_save = f"uah_dataset/windowed_frames/{index_list[idx]}.npy"
-                np.save(path_to_save,window_images)
+                filename = f"{path_to_save}/window_{indices[idx]}"
+                np.save(filename, window_images)
                 idx += 1
 
 

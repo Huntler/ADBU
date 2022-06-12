@@ -10,9 +10,10 @@ from sklearn.utils import shuffle
 
 from uah_dataset.pandas_importer import UAHDataset
 from uah_dataset.image_process import add_pointers_to_window, dict_with_all_frames_pointed, video_to_frames, create_windowed_frames
-from sklearn.utils import shuffle
-
-
+import shutil
+import pickle
+from datetime import datetime
+import argparse
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -205,8 +206,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
 
     return online_semantics
 
-def reshaping_to_numpy(dataf : pd.DataFrame):
-    window_size = 400
+def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
     feature_size = 41
     train = np.empty([0,window_size, feature_size])
     labels = np.empty([0,3], dtype=int)
@@ -229,15 +229,7 @@ def reshaping_to_numpy(dataf : pd.DataFrame):
     print(labels.shape)
     return train, labels
 
-def from_mp4_to_data(index_list):
-    """"
-    This function creates a directory filled with np arrays, one for each window
-    """
-    fps = 400/60
-    # video_to_frames(fps) #requires ffmpeg
-    dataset = UAHDataset()
-    road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
-    create_windowed_frames(road_type_dict,index_list)
+
 
 def sensor_data_prepare(window_size):
 
@@ -251,7 +243,7 @@ def sensor_data_prepare(window_size):
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
 
     # Reshaping to numpy
-    train, labels = reshaping_to_numpy(online_semantic)
+    train, labels = reshaping_to_numpy(online_semantic, window_size)
 
     n_samples = len(train)
     indexing = np.random.permutation(n_samples)
@@ -276,7 +268,7 @@ def sensor_data_prepare(window_size):
     train_processed = train
 
     # get rid of some features
-    idx_OUT_columns = [7, 36, 38, 39]
+    idx_OUT_columns = [7, 36, 38, 39, 40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:, :, idx_IN_columns]
 
@@ -320,4 +312,11 @@ if __name__ == "__main__":
     window_size = args.window_size
     (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
     print(indexing, n_samples)
-    # from_mp4_to_data(window_size, indexing, n_samples, online_semantic) #TODO phillip
+    fps = (window_size/60)
+    video_to_frames(fps)
+    create_windowed_frames(window_size, indexing, n_samples, online_semantic)
+
+
+
+
+    print(n_samples)
