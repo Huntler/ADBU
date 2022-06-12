@@ -239,45 +239,89 @@ def from_mp4_to_data(index_list):
     create_windowed_frames(road_type_dict,index_list)
 
 if __name__ == "__main__":
-    #Read data from files and store to panda frames
-    dataset = UAHDataset()
-    road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
-    #Windowing the dataset
-    windowed_dic = copy.deepcopy(road_type_dict)
-    rows_per_minute = 400  # for dataframe, doesnt work consistently
-    online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-    indices = [i for i in range(2898)]
-    #Reshaping to numpy
-    train,labels = reshaping_to_numpy(online_semantic)
-    train,labels, indices = shuffle(train,labels,indices)
-    from_mp4_to_data(indices)
 
-    np.save('./train', train)
-    np.save('./labels', labels)
-    np.save('./indices', indices)
 
-    # TODO Florene you can work here
+    now = datetime.now()  # current date and time
+    # defining arguments
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Preprocessing stage')
+    subparser = parser.add_subparsers(dest='command')
 
-    #read data
-    train = np.load('./train.npy', allow_pickle=True)
-    labels = np.load('./labels.npy', allow_pickle=True)
+    preprocess_to_numpy = subparser.add_parser('preprocess_to_numpy')
+    from_npy_to_dat = subparser.add_parser('from_npy_to_dat')
+    preprocessing = subparser.add_parser('preprocessing')
 
-    train_processed = train
+    preprocess_to_numpy.add_argument('--window_size', type=int, required=True)
+    from_npy_to_dat.add_argument('--window_size', type=int, required=True)
+    preprocessing.add_argument('--window_size', type=int, required=True)
 
-    #get rid of some features
-    idx_OUT_columns = [7, 36,38,39,40]
-    idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
-    extractedData = train_processed[:,:, idx_IN_columns]
+    args = parser.parse_args()
 
-    #save data to .dat format
-    fp = np.memmap("./train_processed.dat", dtype='float32', mode='w+', shape=extractedData.shape)
-    fp[:] = extractedData[:]
-    fp.flush()
-    del fp
 
-    labels_processed = labels
-    dp = np.memmap("./labels_processed.dat", dtype='int', mode='w+', shape=labels_processed.shape)
-    dp[:] = labels_processed[:]
-    dp.flush()
+    if args.command == 'preprocess_to_numpy' or args.command == 'preprocessing':
+        #Read data from files and store to panda frames
+        dataset = UAHDataset()
+        road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+        #Windowing the dataset
+        windowed_dic = copy.deepcopy(road_type_dict)
+        rows_per_minute = 2 #args.window_size  # for dataframe, doesnt work consistently
+        online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
 
-    del dp
+        #Reshaping to numpy
+        train,labels = reshaping_to_numpy(online_semantic)
+        #train,labels = shuffle(train,labels) #TODO create index list and pass to phillip
+
+        npy_new_dir = '.\\uah_dataset\\processed_dataset\\npy\\window_' + str(rows_per_minute)
+        if os.path.exists(npy_new_dir):
+            shutil.rmtree(npy_new_dir)
+        os.mkdir(npy_new_dir)
+        np.save(npy_new_dir + '\\train_' + now.strftime("%m_%d_%Y-%H_%M_%S"), train)
+        np.save(npy_new_dir + '\\labels_' + now.strftime("%m_%d_%Y-%H_%M_%S"), labels)
+
+    if args.command == 'from_npy_to_dat' or args.command == 'preprocessing':
+        # TODO Florene you can work here
+        parent_dir = '.\\uah_dataset\\processed_dataset\\npy\\window_' + str(args.window_size)
+        files = os.listdir(parent_dir)
+        #read data
+        train = np.load(parent_dir + "\\" +  files[1], allow_pickle=True)
+        labels = np.load(parent_dir + "\\" + files[0], allow_pickle=True)
+
+        train_processed = train
+
+        #get rid of some features
+        idx_OUT_columns = [7, 36,38,39]
+        idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
+        extractedData = train_processed[:,:, idx_IN_columns]
+
+
+
+        #save data to .dat format
+        dat_new_dir = '.\\uah_dataset\\processed_dataset\\dat\\window_' + str(args.window_size)
+        if os.path.exists(dat_new_dir):
+            shutil.rmtree(dat_new_dir)
+        os.mkdir(dat_new_dir)
+
+
+
+        #save train data
+        fp = np.memmap(dat_new_dir + '\\train_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='float32', mode='w+', shape=extractedData.shape)
+        fp[:] = extractedData[:]
+        fp.flush()
+        del fp
+
+        #save label data
+        labels_processed = labels
+        dp = np.memmap(dat_new_dir + '\\labels_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='int', mode='w+', shape=labels_processed.shape)
+        dp[:] = labels_processed[:]
+        dp.flush()
+
+        del dp
+
+        # save shape
+
+        dict = {'sensor': extractedData.shape, 'labels': labels_processed.shape}
+        file = open(dat_new_dir + '\\shape.txt', 'wb')
+        pickle.dump(dict, file)
+        file.close()
+
+        # from_mp4_to_data(window_size, indexing, n_samples, online_semantic) #TODO phillip
