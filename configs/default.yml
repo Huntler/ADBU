@@ -7,7 +7,7 @@ evaluation: None
 
 # define the dataset arguments
 dataset_args:
-  # add window size here?
+  window_size: 60
 
 # define the dataloader arguments
 dataloader_args:

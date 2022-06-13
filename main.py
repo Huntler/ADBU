@@ -18,7 +18,7 @@ config_dict = None
 # initialize dataloader here
 def prepare_data(mode: str):
     if mode == "train":
-        dataset = Dataset() # **config_dict["dataset_args"])
+        dataset = Dataset(**config_dict["dataset_args"])
         split_sizes = [int(math.ceil(len(dataset) * 0.8)), int(math.floor(len(dataset) * 0.2))]
         trainset, valset = torch.utils.data.random_split(dataset, split_sizes)
 
@@ -27,7 +27,7 @@ def prepare_data(mode: str):
         return trainloader, validationloader
 
     if mode == "test":
-        dataset = Dataset() # **config_dict["dataset_args"])
+        dataset = Dataset(**config_dict["dataset_args"])
         dataloader = DataLoader(dataset, pin_memory=True)
         return dataloader
 
@@ -80,7 +80,7 @@ def train():
     print("Sensor to image importance ratio")
     print(model.sensor_image_ratio())
     print()
-    
+
     print("Per sensor importance")
     print(model.sensor_importance())
     # the above, until FIXME is removed
