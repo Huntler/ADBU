@@ -121,9 +121,9 @@ class BaseModel(nn.Module):
                 losses = []
 
                 # run for each batch in training set
-                for X, y in train_iterator:
-                    X_sensor = X[0].to(self.__device)
-                    X_image = X[1].to(self.__device)
+                for X_sensor, X_image, y in train_iterator:
+                    X_sensor = X_sensor.to(self.__device)
+                    X_image = X_image.to(self.__device)
                     y = y.to(self.__device)
 
                     # perform the presiction and measure the loss between the prediction
@@ -189,9 +189,10 @@ class BaseModel(nn.Module):
 
             # predict all y's of the validation set and append the model's accuracy 
             # to the list
-            for X, y in dataloader:
-                X_sensor = X[0].to(self.__device)
-                X_image = X[1].to(self.__device)
+            for X_sensor, X_image, y in dataloader:
+                X_sensor = X_sensor.to(self.__device)
+                X_image = X_image.to(self.__device)
+                y = y.to(self.__device)
 
                 _y = self((X_sensor, X_image))
 
@@ -229,9 +230,10 @@ class BaseModel(nn.Module):
             
             # predict all y's of the validation set and append the model's accuracy 
             # to the list
-            for X, y in dataloader:
-                X_sensor = X[0].to(self.__device)
-                X_image = X[1].to(self.__device)
+            for X_sensor, X_image, y in dataloader:
+                X_sensor = X_sensor.to(self.__device)
+                X_image = X_image.to(self.__device)
+                y = y.to(self.__device)
 
                 _y = self((X_sensor, X_image))
 
