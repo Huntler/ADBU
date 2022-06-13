@@ -64,7 +64,7 @@ def dict_with_all_frames_pointed(pointers):
         percent = float("{0:.2f}".format(i / total * 100))
         filledLength = int(percent)
         bar = '█' * filledLength + '-' * (100 - filledLength)
-        print(f'\rProgress |{bar}| {percent}% Loading images to dictionary', end = ' ')
+        print(f'\rProgress |{bar}| {percent}% Loading images.', end = ' ')
 
 
         if len(pointer) == 0:   #if there is no pointer in this list continue
@@ -148,7 +148,10 @@ def create_windowed_frames(window_size, indices, n_samples, online_semantic):
 
     fps  = window_size/60
     idx = 0
-    path_to_save = f"uah_dataset/processed_dataset/video/window_{window_size}"
+    path_to_save = f"uah_dataset/processed_dataset/video"
+    if not os.path.exists(path_to_save):
+        os.mkdir(path_to_save)
+    path_to_save = f"{path_to_save}/window_{window_size}"
     if os.path.exists(path_to_save):
         shutil.rmtree(path_to_save)
 
@@ -162,7 +165,7 @@ def create_windowed_frames(window_size, indices, n_samples, online_semantic):
 
             for i in range(len(list_pointers)):
                 if not len(list_pointers[i]) == window_size:
-                    print(f"Lenght list of pointers {len(list_pointers[i])}")
+                    print(f"Length list of pointers {len(list_pointers[i])}")
                     continue
                 window_images = np.reshape(dic[list_pointers[i][0]], (1,224,224,3))
                 for pointer in list_pointers[i][1:]:
