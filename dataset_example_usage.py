@@ -9,7 +9,11 @@ import imageio
 from sklearn.utils import shuffle
 
 from uah_dataset.pandas_importer import UAHDataset
-
+from uah_dataset.image_process import add_pointers_to_window, dict_with_all_frames_pointed, video_to_frames, create_windowed_frames
+import shutil
+import pickle
+from datetime import datetime
+import argparse
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -28,7 +32,7 @@ from sklearn.preprocessing import LabelEncoder
 # UAHDataset(generate_video_frames=True)
 
 # create the dataset
-dataset = UAHDataset()
+#dataset = UAHDataset()
 # print("Dataset:", dataset.latest)
 # print("Drivers:", dataset.drivers)
 
@@ -46,7 +50,7 @@ dataset = UAHDataset()
 # # note: this should work, but we loose information about when a time series resets.
 # # This could prevent learning later on.
 # print("Info of all drivers")'''
-road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+#road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
 
 # '''roads = [_ for _ in road_type_dict.keys()]
 # print("# Roads:", sum([len(road_type_dict[_]) for _ in roads]))
@@ -118,12 +122,6 @@ history = model.fit(X_train, X_train, epochs=200, batch_size=16, verbose=2, vali
 # print(kmeans.labels_)
 
 
-
-
-
-
-
-
 def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold : int = 60, increment : int = 10) -> dict:
     """
     Creates windows, for every
@@ -134,6 +132,7 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
     :return: dictionary: road type -> mood -> window_index -> dataframe
     """
 
+    windowed_dic = copy.deepcopy(dictionary)
     window_number = 0
     window_time = 0
     time_difference = []
@@ -168,9 +167,6 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
 
 
 
-
-
-
 def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH-DRIVESET-v1/"):
     """
     Mainly copied from the original reader
@@ -182,7 +178,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
     drivers = ['D1','D2','D3','D4','D5','D6']
     roads = ["MOTORWAY", "SECONDARY"]
 
-    headers = ["TimeStamp", "Latitude" , " Longitude", "Total" , "Accel", "Braking", "Turning", "Weaving",
+    headers = ["time", "Latitude" , " Longitude", "Total" , "Accel", "Braking", "Turning", "Weaving",
                 "Drifting", "Oversspeed", "Carfollow", "Normal", "Drowsy", "Aggressive", "Unknown",
                 "Total_last_minute", "Accel_last_minute", "Braking_last_minute" , "Turning_last_minute",
                 "Weaving_last_minute","Drifting_last_minute", "Oversspeed_last_minute", "Carfollow_last_minute",
@@ -198,7 +194,7 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
             scoresFileName = folder + '/' + direc + '/' + 'SEMANTIC_ONLINE.txt'
             scoresData = np.genfromtxt(scoresFileName, dtype=np.float64, delimiter=' ')
             df = pd.DataFrame(scoresData, columns = headers)
-
+            df['Driver'] = driver
             if road in online_semantics:
                 if mood in online_semantics[road]:
                     online_semantics[road][mood] = pd.concat([online_semantics[road][mood], df])
@@ -210,9 +206,8 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
 
     return online_semantics
 
-def reshaping_to_numpy(dataf : pd.DataFrame):
-    window_size = 400
-    feature_size = 40
+def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
+    feature_size = list(list(list(dataf.values())[0].values())[0].values())[0].shape[1] #TODO change that again
     train = np.empty([0,window_size, feature_size])
     labels = np.empty([0,3], dtype=int)
     for road, road_dic in dataf.items():
@@ -236,45 +231,122 @@ def reshaping_to_numpy(dataf : pd.DataFrame):
 
 
 
+def sensor_data_prepare(window_size):
 
-
-if __name__ == "__main__":
-    '''windowed_dic = copy.deepcopy(road_type_dict)
-    rows_per_minute = 400  # for dataframe, doesnt work consistently
+    now = datetime.now()  # current date and time
+    # Read data from files and store to panda frames
+    dataset = UAHDataset()
+    road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+    # Windowing the dataset
+    windowed_dic = copy.deepcopy(road_type_dict)
+    rows_per_minute = window_size  # args.window_size  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-    train,labels = reshaping_to_numpy(online_semantic)
 
-    train,labels  = shuffle(train,labels)
+    # Reshaping to numpy
+    train, labels = reshaping_to_numpy(online_semantic, window_size)
 
-    np.save('./train', train)
-    np.save('./labels', labels)'''
+    n_samples = len(train)
+    indexing = np.random.permutation(n_samples)
 
-    train = np.load('./train.npy', allow_pickle=True)
-    labels = np.load('./labels.npy', allow_pickle=True)
+    (train,labels) = (train[indexing],labels[indexing]) #TODO create index list and pass to phillip
 
+    npy_new_dir = '.\\uah_dataset\\processed_dataset\\sensor\\npy\\window_' + str(rows_per_minute)
+    if os.path.exists(npy_new_dir):
+        shutil.rmtree(npy_new_dir)
+    os.mkdir(npy_new_dir)
+    np.save(npy_new_dir + '\\train_' + now.strftime("%m_%d_%Y-%H_%M_%S"), train)
+    np.save(npy_new_dir + '\\labels_' + now.strftime("%m_%d_%Y-%H_%M_%S"), labels)
+
+
+
+    parent_dir = '.\\uah_dataset\\processed_dataset\\sensor\\npy\\window_' + str(args.window_size)
+    files = os.listdir(parent_dir)
+    # read data
+    train = np.load(parent_dir + "\\" + files[1], allow_pickle=True)
+    labels = np.load(parent_dir + "\\" + files[0], allow_pickle=True)
     train_processed = train
 
-    idx_OUT_columns = [7, 36,38,39]
+    #train = np.load("train.npy",allow_pickle=True)
+    #labels = np.load("labels.npy",allow_pickle=True)
+
+
+
+    # get rid of some features
+    # 6: Latitude used to query OSM
+    # 11: Latitude
+    # 12: Longitude
+    # 13: Altitude
+    # 21: Unknown
+    # 29: Roll angle
+    # 30: Pitch angle
+    # 31: Yaw angle
+    # 37: Phi
+
+    'TO DISCUSS' \
+    '26: X accel filtered by KF (Gs)' \
+    '27: Y accel filtered by KF (Gs)' \
+    '28: Z accel filtered by KF (Gs)'
+
+
+    idx_OUT_columns = [6, 7, 11, 12, 13, 21, 29, 30, 31, 36, 37, 38, 39, 40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
-    extractedData = train_processed[:,:, idx_IN_columns]
-    print(extractedData.shape)
-    fp = np.memmap("./train_processed.dat", dtype='float32', mode='w+', shape=extractedData.shape)
+    extractedData = train_processed[:, :, idx_IN_columns]
+
+    #Normalize train by feautures (column)
+    for j in range (len(extractedData)):
+        df1=pd.DataFrame(extractedData[j])
+        for i in range (1,27):
+            df1[i] = df1[i] / (df1[i].abs().max()+0.01)
+        extractedData[j]=df1.to_numpy()
+
+    # save data to .dat format
+    dat_new_dir = '.\\uah_dataset\\processed_dataset\\sensor\\dat\\window_' + str(args.window_size)
+    if os.path.exists(dat_new_dir):
+        shutil.rmtree(dat_new_dir)
+    os.mkdir(dat_new_dir)
+
+    # save train data
+    fp = np.memmap(dat_new_dir + '\\train_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='float32', mode='w+',
+                   shape=extractedData.shape)
     fp[:] = extractedData[:]
     fp.flush()
+    del fp
 
-
+    # save label data
     labels_processed = labels
-    fp = np.memmap("./labels_processed.dat", dtype='int', mode='w+', shape=labels_processed.shape)
-    fp[:] = labels_processed[:]
-    fp.flush()
-    '''e = np.random.rand(10,12,21)
+    dp = np.memmap(dat_new_dir + '\\labels_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='int', mode='w+',
+                   shape=labels_processed.shape)
+    dp[:] = labels_processed[:]
+    dp.flush()
 
-    shuffler = np.random.permutation(len(e))
-    np.save('./test', e[shuffler])
-    f = np.load('./test.npy')
-    print(f[0])'''
+    del dp
 
-    #print(labels[0])
-    #windowed_dic = read()
-    #rows_per_minute = 60 #for online semantics
-    #data = windowing(windowed_dic, rows_per_minute=rows_per_minute)
+    # save shape
+    dict = {'sensor': extractedData.shape, 'labels': labels_processed.shape}
+    file = open(dat_new_dir + '\\shape.txt', 'wb')
+    pickle.dump(dict, file)
+    file.close()
+
+    return indexing, n_samples, online_semantic
+
+if __name__ == "__main__":
+    # Create the parser
+    dataset = UAHDataset()
+    road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
+
+    parser = argparse.ArgumentParser(description='Preprocessing stage')
+    parser.add_argument('--window_size', type=int, help='window_size', required=True)
+
+    args = parser.parse_args()
+
+    window_size = args.window_size
+    (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
+    print(indexing, n_samples)
+    fps = (window_size/60)
+    video_to_frames(fps)
+    create_windowed_frames(window_size, indexing, n_samples, online_semantic)
+
+
+
+
+    print(n_samples)

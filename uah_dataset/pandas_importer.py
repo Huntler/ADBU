@@ -15,7 +15,7 @@ headers = {
                 "Course (degrees)", "Difcourse: course variation", "Position state [internal val]", "Lanex dist state [internal val]",
                 "Lanex history [internal val]", "Unkown"],
     "PROC_LANE_DETECTION": ["time", "Car pos. from lane center (meters)", "Phi", "Road width (meters)", "State of lane estimator"],
-    "PROC_VEHICLE_DETECTION": ["time", "Distance to ahead vehicle (meters)", "Impact time to ahead vehicle (secs.)", "Detected # of vehicles",
+    "PROC_VEHICLE_DETECTION": ["time",  "Distance to ahead vehicle (meters)", "Impact time to ahead vehicle (secs.)", "Detected # of vehicles",
                                "Gps speed (Km/h) [redundant val]"],
     "PROC_OPENSTREETMAP_DATA": ["time", "Current road maxspeed", "Maxspeed reliability [Flag]", "Road type [graph not available]", "# of lanes in road",
                                 "Estimated current lane", "Latitude used to query OSM", "Longitude used to query OSM", "Delay answer OSM query (seconds)", "Speed (Km/h) [redundant val]"]
@@ -80,6 +80,7 @@ class UAHDataset:
                 c = complete.get(road_type, {})
                 for label, data in label_dict.items():
                     l = c.get(label, pandas.DataFrame())
+                    data["Driver"] = driver
                     if l.empty:
                         l = data
                     else:
