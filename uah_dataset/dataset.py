@@ -14,10 +14,11 @@ class Dataset(torch.utils.data.Dataset):
         # load all matrices
         self.indices = [i for i in range(2937)]
 
+        self.labels = self.read_labels()
+
         self.sensor_data = self.read_sensor()
         self.image_data = 0 #np.random.rand(2937, 4, 2, 2, 1) # TODO PHILLIP load the correct dataset(based on window_size)
-        self.labels = self.read_labels()
-        
+
     def __len__(self) -> int:
         # amount of total samples / windows / whatever we train
         if (len(self.sensor_data) != len(self.image_data)):
@@ -28,17 +29,23 @@ class Dataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         # TODO maybe do a check before returning
         id = self.indices[index]
-        print(id)
 
-        print(f"batch size:{len(id)}")
-        images = np.reshape(np.load('./uah_dataset/processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id[0]) + ".npy"), (1,self.window_size, 224,224, 3))
-        for i in range(len(id)):
-            images = np.concatenate((images,np.reshape(np.load('./uah_dataset/processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id[0]) + ".npy"), (1,self.window_size, 224,224, 3))), axis = 0) # (batch size, window_size, 224,224,3)
+        if isinstance(index, int):
+            images = np.reshape(np.load('./processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id) + ".npy"), (1,self.window_size, 224,224, 3))
+            return (self.sensor_data[index], images , self.labels[index])
+
+        else:
+            length = len(id)-1
+            images = np.reshape(np.load('./processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id[0]) + ".npy"), (1,self.window_size, 224,224, 3))
+
+
+        for i in range(length):
+            images = np.concatenate((images,np.reshape(np.load('./processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id[0]) + ".npy"), (1,self.window_size, 224,224, 3))), axis = 0) # (batch size, window_size, 224,224,3)
 
         return (self.sensor_data[index], images , self.labels[index])
 
     def read_sensor(self):
-        dat_dir = './uah_dataset/processed_dataset/sensor/dat/window_' + str(self.window_size)
+        dat_dir = './processed_dataset/sensor/dat/window_' + str(self.window_size)
         # get shape
         files = os.listdir(dat_dir)
         # read data
@@ -47,7 +54,7 @@ class Dataset(torch.utils.data.Dataset):
         return np.memmap(dat_dir + "/" + files[2], dtype='float32', mode='r', shape=shapes['sensor'])
         
     def read_labels(self):
-        dat_dir = './uah_dataset/processed_dataset/sensor/dat/window_' + str(self.window_size)
+        dat_dir = './processed_dataset/sensor/dat/window_' + str(self.window_size)
         # get shape
         files = os.listdir(dat_dir)
         # read data
@@ -60,7 +67,7 @@ if __name__ == "__main__":
     # TODO: perform our tests
     d = Dataset()
     sensor, image, label = d[0:5]
-    print(sensor)
-    print(image)
-    print(label)
+    print(sensor.shape)
+    print(image.shape)
+    print(label.shape)
 

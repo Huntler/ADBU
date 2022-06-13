@@ -145,7 +145,8 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
             t = initial_threshold                                    #first window ends at a point where more than t seconds have passed
             print(f"Mood: {mood}")
             for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
-                if window == np.nan:
+                if not isinstance(window, pd.DataFrame):
+                    print(len(window))
                     continue
 
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
@@ -358,7 +359,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     #
     # window_size = args.window_size
-    window_size = 60
+    window_size = 10
     (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
     print(indexing, n_samples)
     fps = (window_size/60)
