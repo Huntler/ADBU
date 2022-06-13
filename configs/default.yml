@@ -1,5 +1,5 @@
 # specify device on which the model is trained
-device: cpu
+device: cuda
 
 # set to 'None' if a new model should be trained, otherwise specify
 # a model's directory
@@ -7,7 +7,6 @@ evaluation: None
 
 # define the dataset arguments
 dataset_args:
-  d_type: train
   # add window size here?
 
 # define the dataloader arguments
@@ -29,3 +28,9 @@ save_every: 5
 model_args:
   tag: Multimodal_v1/default
   log: True
+  lr: 0.003
+  lr_decay: 0.9
+  weight_decay: 0.05
+  resnet: True
+  lstm_layers: 2
+  lstm_hidden: 128

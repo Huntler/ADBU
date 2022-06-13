@@ -10,31 +10,57 @@ from model.sensor_model import SensorModel
 
 
 class MultimodalModel(BaseModel):
-    def __init__(self, tag: str, log: bool = True) -> None:
+    def __init__(self,tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, 
+                 resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, log: bool = True) -> None:
         self.writer = None        
         super(MultimodalModel, self).__init__(tag, log)
 
         # add image model
-        self.__image_module = ImageModel()
+        self.__image_module = ImageModel(resnet=resnet)
 
         # add sensor model
         self.__sensor_module = SensorModel()
 
         # add LSTM
-        self.__lstm = nn.LSTM(279, 128, num_layers=2, dropout=0.1, bidirectional=False, batch_first=True)
+        lstm_in = self.__image_module.num_features + self.__sensor_module.num_features
+        self.__lstm = nn.LSTM(lstm_in, lstm_hidden, num_layers=lstm_layers, bidirectional=False, batch_first=True)
 
         # add classifier output inclunding some dense layers
         self.__dense = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(400 * 128, 64),
+            nn.Linear(400 * lstm_hidden, 64),
             nn.ReLU(),
             nn.Linear(64, 3)
         )
 
         # define optimizer, loss function and scheduler as BaseModel needs
         self.loss_fn = torch.nn.CrossEntropyLoss()
-        self.optim = torch.optim.AdamW(self.parameters(), lr=0.003, betas=[0.99, 0.999], weight_decay=0.05)
-        self.scheduler = ExponentialLR(self.optim, gamma=0.9)
+        self.optim = torch.optim.AdamW(self.parameters(), lr=lr, betas=[0.99, 0.999], weight_decay=weight_decay)
+        self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
+    
+    def sensor_image_ratio(self) -> float:
+        """This method calculates the importance of sensor data vs. image data
+        based on then output weights of both modules.
+
+        Returns:
+            float: The ration of sensor to image importance.
+        """
+        # get mean of image fc parameters
+        image_mean = 0
+        image_fc = self.__image_module.fc
+        for param in image_fc.parameters():
+            image_mean += param.data.cpu().numpy()
+        image_mean /= len(image_fc.parameters())
+
+        # get mean of sensor fc parameters
+        sensor_mean = 0
+        sensor_fc = self.__sensor_module.fc
+        for param in sensor_fc.parameters():
+            sensor_mean += param.data.cpu().numpy()
+        sensor_mean /= len(sensor_fc.parameters())
+        
+        ratio = sensor_mean / image_mean
+        return ratio
     
     def forward(self, X):
         x_sensor, x_image = X
