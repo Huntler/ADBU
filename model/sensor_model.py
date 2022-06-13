@@ -1,4 +1,5 @@
 from typing import Any
+import numpy as np
 from torch import nn
 import torch
 
@@ -21,13 +22,10 @@ class SensorModel(nn.Module):
     def num_features(self) -> int:
         return 36
 
-    def first_layer_visualization(self, path: str) -> None:
-        """Method saves a visualization of the first layer's weights.
-
-        Args:
-            path (str): The path where to store the visualization.
+    def first_layer_params(self) -> np.array:
+        """Method extracts the weights of the first layer and returns them.
         """
-        # TODO: use matplotlib
+        # TODO: 
         pass
     
     def forward(self, x: torch.tensor) -> Any:
