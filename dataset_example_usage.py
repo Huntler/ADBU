@@ -246,11 +246,18 @@ def sensor_data_prepare(window_size):
     train, labels = reshaping_to_numpy(online_semantic, window_size)
 
     n_samples = len(train)
+    # n_samples = 2937
     indexing = np.random.permutation(n_samples)
 
     (train,labels) = (train[indexing],labels[indexing]) #TODO create index list and pass to phillip
 
-    npy_new_dir = '.\\uah_dataset\\processed_dataset\\sensor\\npy\\window_' + str(rows_per_minute)
+    npy_new_dir = '.\\uah_dataset\\processed_dataset\\sensor'
+    if not os.path.exists(npy_new_dir):
+        os.mkdir(npy_new_dir)
+    npy_new_dir = npy_new_dir + '\\npy'
+    if not os.path.exists(npy_new_dir):
+        os.mkdir(npy_new_dir)
+    npy_new_dir = npy_new_dir + '\\window_' + str(window_size)
     if os.path.exists(npy_new_dir):
         shutil.rmtree(npy_new_dir)
     os.mkdir(npy_new_dir)
@@ -266,8 +273,8 @@ def sensor_data_prepare(window_size):
     labels = np.load(parent_dir + "\\" + files[0], allow_pickle=True)
     train_processed = train
 
-    #train = np.load("train.npy",allow_pickle=True)
-    #labels = np.load("labels.npy",allow_pickle=True)
+    # train = np.load("train.npy",allow_pickle=True)
+    # labels = np.load("labels.npy",allow_pickle=True)
 
 
 
@@ -301,7 +308,14 @@ def sensor_data_prepare(window_size):
         extractedData[j]=df1.to_numpy()
 
     # save data to .dat format
-    dat_new_dir = '.\\uah_dataset\\processed_dataset\\sensor\\dat\\window_' + str(window_size)
+    dat_new_dir = '.\\uah_dataset\\processed_dataset\\sensor'
+    if not os.path.exists(dat_new_dir):
+        os.mkdir(dat_new_dir)
+    dat_new_dir = dat_new_dir + '\\dat'
+    if not os.path.exists(dat_new_dir):
+        os.mkdir(dat_new_dir)
+    dat_new_dir = dat_new_dir + '\\window_' + str(window_size)
+
     if os.path.exists(dat_new_dir):
         shutil.rmtree(dat_new_dir)
     os.mkdir(dat_new_dir)
