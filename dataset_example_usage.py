@@ -144,7 +144,10 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
             windowed = {}
             t = initial_threshold                                    #first window ends at a point where more than t seconds have passed
             print(f"Mood: {mood}")
-            for window in mood_df.rolling(window = rows_per_minute):
+            for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
+                if window == np.nan:
+                    continue
+
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
                     t = initial_threshold
                 elif int(window.iloc[-1, 0]) > t:
