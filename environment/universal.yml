@@ -1,4 +1,8 @@
 name: adbu
+
+channels:
+  - conda-forge
+  - pytorch
  
 dependencies:
     - python=3.9
@@ -8,8 +12,10 @@ dependencies:
     - imageio
     - tqdm
     - pyyaml
+    - pytorch
+    - torchvision
+    - torchaudio
+    - cudatoolkit=11.6
     - pip:
       - scikit-learn
-      - pytorch
-      - torchvision
       - tensorboard
