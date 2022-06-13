@@ -1,4 +1,5 @@
 from unicodedata import bidirectional
+import numpy as np
 from torch.optim.lr_scheduler import ExponentialLR
 from torch import nn
 import torch
@@ -38,6 +39,9 @@ class MultimodalModel(BaseModel):
         self.optim = torch.optim.AdamW(self.parameters(), lr=lr, betas=[0.99, 0.999], weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
     
+    def sensor_importance(self) -> np.array:
+        return self.__sensor_module.first_layer_params()
+
     def sensor_image_ratio(self) -> float:
         """This method calculates the importance of sensor data vs. image data
         based on then output weights of both modules.

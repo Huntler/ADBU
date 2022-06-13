@@ -76,6 +76,15 @@ def train():
     # prepare the model
     model: BaseModel = prepare_model()
 
+    # FIXME: test, will be removed
+    print("Sensor to image importance ratio")
+    print(model.sensor_image_ratio())
+    print()
+    
+    print("Per sensor importance")
+    print(model.sensor_importance())
+    # the above, until FIXME is removed
+
     # train the model and save it in the end
     model.learn(train, validation, test, epochs=config_dict["train_epochs"],
                 save_every=config_dict["save_every"])
