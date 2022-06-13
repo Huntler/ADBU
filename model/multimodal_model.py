@@ -52,18 +52,26 @@ class MultimodalModel(BaseModel):
         # get mean of image fc parameters
         image_mean = 0
         image_fc = self.__image_module.fc
-        for param in image_fc.parameters():
-            image_mean += param.data.cpu().numpy()
-        image_mean /= len(image_fc.parameters())
+        for name, param in image_fc.named_parameters():
+            # name is either 'bias' or 'weight'
+            # get params and apply ReLU
+            p = param.data.cpu().numpy()
+            p[p < 0] = 0
+
+            image_mean += np.mean(p)
 
         # get mean of sensor fc parameters
         sensor_mean = 0
         sensor_fc = self.__sensor_module.fc
-        for param in sensor_fc.parameters():
-            sensor_mean += param.data.cpu().numpy()
-        sensor_mean /= len(sensor_fc.parameters())
+        for name, param in sensor_fc.named_parameters():
+            # name is either 'bias' or 'weight'
+            # get params and apply ReLU
+            p = param.data.cpu().numpy()
+            p[p < 0] = 0
+
+            sensor_mean += np.mean(p)
         
-        ratio = sensor_mean / image_mean
+        ratio = image_mean / sensor_mean
         return ratio
     
     def forward(self, X):

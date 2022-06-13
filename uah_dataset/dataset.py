@@ -20,9 +20,9 @@ class Dataset(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         # amount of total samples / windows / whatever we train
-        if (len(self.sensor_data) != len(self.image_data)):
-            raise RuntimeError("Sensor data and video data have different sizes")
-            return -1
+        # if (len(self.sensor_data) != len(self.image_data)):
+        #     raise RuntimeError("Sensor data and video data have different sizes")
+        #     return -1
         return len(self.labels)
 
     def __getitem__(self, index):
