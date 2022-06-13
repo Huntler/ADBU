@@ -66,7 +66,7 @@ class Dataset(torch.utils.data.Dataset):
 if __name__ == "__main__":
     # TODO: perform our tests
     d = Dataset()
-    sensor, image, label = d[0:5]
+    sensor, image, label = d[0:8]
     print(sensor.shape)
     print(image.shape)
     print(label.shape)
