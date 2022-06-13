@@ -345,7 +345,7 @@ if __name__ == "__main__":
     (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
     print(indexing, n_samples)
     fps = (window_size/60)
-    # video_to_frames(fps)
+    video_to_frames(fps)
     create_windowed_frames(window_size, indexing, n_samples, online_semantic)
 
 
