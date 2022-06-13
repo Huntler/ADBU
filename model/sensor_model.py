@@ -11,7 +11,7 @@ class SensorModel(nn.Module):
         # dense network to understand the sensor features
         self.fc = nn.Linear(64, self.num_features)
         self.__model = nn.Sequential(
-            nn.Linear(36, 64),
+            nn.Linear(26, 64),
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
@@ -20,7 +20,7 @@ class SensorModel(nn.Module):
 
     @property
     def num_features(self) -> int:
-        return 36
+        return 26
 
     def first_layer_params(self) -> np.array:
         """Method extracts the weights of the first layer and returns them.

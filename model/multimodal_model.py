@@ -11,7 +11,7 @@ from model.sensor_model import SensorModel
 
 
 class MultimodalModel(BaseModel):
-    def __init__(self,tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, 
+    def __init__(self, tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, 
                  resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, log: bool = True) -> None:
         self.writer = None        
         super(MultimodalModel, self).__init__(tag, log)
@@ -29,7 +29,7 @@ class MultimodalModel(BaseModel):
         # add classifier output inclunding some dense layers
         self.__dense = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(400 * lstm_hidden, 64),
+            nn.Linear(lstm_hidden, 64),
             nn.ReLU(),
             nn.Linear(64, 3)
         )
@@ -93,6 +93,7 @@ class MultimodalModel(BaseModel):
 
         # pass the combination of both into a LSTM
         x, _ = self.__lstm(x)
+        x = x[:, -1, :]
         x = self.__dense(x)
 
         return x
