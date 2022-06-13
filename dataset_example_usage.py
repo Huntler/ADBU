@@ -259,7 +259,7 @@ def sensor_data_prepare(window_size):
 
 
 
-    parent_dir = '.\\uah_dataset\\processed_dataset\\sensor\\npy\\window_' + str(args.window_size)
+    parent_dir = '.\\uah_dataset\\processed_dataset\\sensor\\npy\\window_' + str(window_size)
     files = os.listdir(parent_dir)
     # read data
     train = np.load(parent_dir + "\\" + files[1], allow_pickle=True)
@@ -281,6 +281,7 @@ def sensor_data_prepare(window_size):
     # 30: Pitch angle
     # 31: Yaw angle
     # 37: Phi
+    #40 Driver
 
     'TO DISCUSS' \
     '26: X accel filtered by KF (Gs)' \
@@ -300,7 +301,7 @@ def sensor_data_prepare(window_size):
         extractedData[j]=df1.to_numpy()
 
     # save data to .dat format
-    dat_new_dir = '.\\uah_dataset\\processed_dataset\\sensor\\dat\\window_' + str(args.window_size)
+    dat_new_dir = '.\\uah_dataset\\processed_dataset\\sensor\\dat\\window_' + str(window_size)
     if os.path.exists(dat_new_dir):
         shutil.rmtree(dat_new_dir)
     os.mkdir(dat_new_dir)
@@ -334,16 +335,17 @@ if __name__ == "__main__":
     dataset = UAHDataset()
     road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
 
-    parser = argparse.ArgumentParser(description='Preprocessing stage')
-    parser.add_argument('--window_size', type=int, help='window_size', required=True)
-
-    args = parser.parse_args()
-
-    window_size = args.window_size
+    # parser = argparse.ArgumentParser(description='Preprocessing stage')
+    # parser.add_argument('--window_size', type=int, help='window_size', required=True)
+    #
+    # args = parser.parse_args()
+    #
+    # window_size = args.window_size
+    window_size = 60
     (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
     print(indexing, n_samples)
     fps = (window_size/60)
-    video_to_frames(fps)
+    # video_to_frames(fps)
     create_windowed_frames(window_size, indexing, n_samples, online_semantic)
 
 
