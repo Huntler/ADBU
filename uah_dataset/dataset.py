@@ -4,12 +4,11 @@ import os
 import pickle
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self) -> None:
+    def __init__(self, window_size: int) -> None:
         super().__init__()
 
         #provide with window size of data you want to load
-        self.window_size = 60
-
+        self.window_size = window_size
 
         # load all matrices
         self.indices = [i for i in range(2937)]
@@ -48,19 +47,32 @@ class Dataset(torch.utils.data.Dataset):
         dat_dir = './uah_dataset/processed_dataset/sensor/dat/window_' + str(self.window_size)
         # get shape
         files = os.listdir(dat_dir)
+        sensor_file = None
+        shapes = None
+        for file in files:
+            if "train" in file:
+                sensor_file = file
+            if ".txt" in file:
+                f = open(dat_dir + "/" + file, 'rb') 
+                shapes = pickle.load(f)
+
         # read data
-        file = open(dat_dir + "/" + files[1], 'rb')
-        shapes = pickle.load(file)
-        return np.memmap(dat_dir + "/" + files[2], dtype='float32', mode='r', shape=shapes['sensor'])
+        return np.memmap(dat_dir + "/" + sensor_file, dtype='float32', mode='r', shape=shapes['sensor'])
         
     def read_labels(self):
         dat_dir = './uah_dataset/processed_dataset/sensor/dat/window_' + str(self.window_size)
-        # get shape
+
         files = os.listdir(dat_dir)
-        # read data
-        file = open(dat_dir + "/" + files[1], 'rb')
-        shapes = pickle.load(file)
-        return np.memmap(dat_dir + "/" + files[0], dtype='int', mode='r', shape=shapes['labels'])
+        label_file = None
+        shapes = None
+        for file in files:
+            if "train" in file:
+                label_file = file
+            if ".txt" in file:
+                f = open(dat_dir + "/" + file, 'rb') 
+                shapes = pickle.load(f)
+
+        return np.memmap(dat_dir + "/" + label_file, dtype='int', mode='r', shape=shapes['labels'])
 
 
 if __name__ == "__main__":

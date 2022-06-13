@@ -139,3 +139,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+uah_dataset/processed_dataset/sensor/dat/window_60/shape.txt

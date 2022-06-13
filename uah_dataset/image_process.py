@@ -103,9 +103,11 @@ def video_to_frames(fps : int = 1) -> None:
 
         folder_driver = folder + "/" + driver
         for rec in os.listdir(folder_driver):  #all recordings for every driver
+            info = rec.split("-")
+            if len(info) != 5:
+                continue
 
-
-            time_stamp, distance, _, behaviour, road_type = rec.split("-")
+            time_stamp, distance, _, behaviour, road_type = info
 
             # find the video file
             video_file = None

@@ -145,10 +145,6 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
             t = initial_threshold                                    #first window ends at a point where more than t seconds have passed
             print(f"Mood: {mood}")
             for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
-                if not isinstance(window, pd.DataFrame):
-                    print(len(window))
-                    continue
-
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
                     t = initial_threshold
                 elif int(window.iloc[-1, 0]) > t:
@@ -226,6 +222,9 @@ def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
                 raise RuntimeError(mood , " does not correspond to any existing labels")
 
             for i in mood_df:
+                # FIXME: window size can be smaller than specified
+                if mood_df[i].shape[0] != window_size:
+                    continue
                 train = np.concatenate((train, mood_df[i].values[np.newaxis,...]), axis=0)
                 labels = np.concatenate((labels, label[np.newaxis,...]), axis=0)
             print('Iteration passed')
@@ -236,7 +235,6 @@ def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
 
 
 def sensor_data_prepare(window_size):
-
     now = datetime.now()  # current date and time
     # Read data from files and store to panda frames
     dataset = UAHDataset()
@@ -255,26 +253,32 @@ def sensor_data_prepare(window_size):
 
     (train,labels) = (train[indexing],labels[indexing]) #TODO create index list and pass to phillip
 
-    npy_new_dir = '.\\uah_dataset\\processed_dataset\\sensor'
+    npy_new_dir = './uah_dataset/processed_dataset/sensor'
     if not os.path.exists(npy_new_dir):
         os.mkdir(npy_new_dir)
-    npy_new_dir = npy_new_dir + '\\npy'
+    npy_new_dir = npy_new_dir + '/npy'
     if not os.path.exists(npy_new_dir):
         os.mkdir(npy_new_dir)
-    npy_new_dir = npy_new_dir + '\\window_' + str(window_size)
+    npy_new_dir = npy_new_dir + '/window_' + str(window_size)
     if os.path.exists(npy_new_dir):
         shutil.rmtree(npy_new_dir)
     os.mkdir(npy_new_dir)
-    np.save(npy_new_dir + '\\train_' + now.strftime("%m_%d_%Y-%H_%M_%S"), train)
-    np.save(npy_new_dir + '\\labels_' + now.strftime("%m_%d_%Y-%H_%M_%S"), labels)
+    np.save(npy_new_dir + '/train_' + now.strftime("%m_%d_%Y-%H_%M_%S"), train)
+    np.save(npy_new_dir + '/labels_' + now.strftime("%m_%d_%Y-%H_%M_%S"), labels)
 
 
 
-    parent_dir = '.\\uah_dataset\\processed_dataset\\sensor\\npy\\window_' + str(window_size)
-    files = os.listdir(parent_dir)
+    parent_dir = './uah_dataset/processed_dataset/sensor/npy/window_' + str(window_size)
+    train_path = labels_path = None
+    for file in os.listdir(parent_dir):
+        if "train" in file:
+            train_path = file
+        else:
+            labels_path = file
+            
     # read data
-    train = np.load(parent_dir + "\\" + files[1], allow_pickle=True)
-    labels = np.load(parent_dir + "\\" + files[0], allow_pickle=True)
+    train = np.load(parent_dir + "/" + train_path, allow_pickle=True)
+    labels = np.load(parent_dir + "/" + labels_path, allow_pickle=True)
     train_processed = train
 
     # train = np.load("train.npy",allow_pickle=True)
@@ -300,32 +304,33 @@ def sensor_data_prepare(window_size):
     '28: Z accel filtered by KF (Gs)'
 
 
-    idx_OUT_columns = [6, 7, 11, 12, 13, 21, 29, 30, 31, 36, 37, 38, 39, 40]
+    idx_OUT_columns = [6, 3, 7, 11, 12, 13, 21, 29, 30, 31, 36, 37, 38, 39, 40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:, :, idx_IN_columns]
 
     #Normalize train by feautures (column)
-    for j in range (len(extractedData)):
+    # FIXME: normalize over the whole dataset
+    for j in range(len(extractedData)):
         df1=pd.DataFrame(extractedData[j])
-        for i in range (1,27):
+        for i in range (0, len(idx_IN_columns)):
             df1[i] = df1[i] / (df1[i].abs().max()+0.01)
         extractedData[j]=df1.to_numpy()
 
     # save data to .dat format
-    dat_new_dir = '.\\uah_dataset\\processed_dataset\\sensor'
+    dat_new_dir = './uah_dataset/processed_dataset/sensor'
     if not os.path.exists(dat_new_dir):
         os.mkdir(dat_new_dir)
-    dat_new_dir = dat_new_dir + '\\dat'
+    dat_new_dir = dat_new_dir + '/dat'
     if not os.path.exists(dat_new_dir):
         os.mkdir(dat_new_dir)
-    dat_new_dir = dat_new_dir + '\\window_' + str(window_size)
+    dat_new_dir = dat_new_dir + '/window_' + str(window_size)
 
     if os.path.exists(dat_new_dir):
         shutil.rmtree(dat_new_dir)
     os.mkdir(dat_new_dir)
 
     # save train data
-    fp = np.memmap(dat_new_dir + '\\train_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='float32', mode='w+',
+    fp = np.memmap(dat_new_dir + '/train_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='float32', mode='w+',
                    shape=extractedData.shape)
     fp[:] = extractedData[:]
     fp.flush()
@@ -333,7 +338,7 @@ def sensor_data_prepare(window_size):
 
     # save label data
     labels_processed = labels
-    dp = np.memmap(dat_new_dir + '\\labels_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='int', mode='w+',
+    dp = np.memmap(dat_new_dir + '/labels_' + now.strftime("%m_%d_%Y-%H_%M_%S") + ".dat", dtype='int', mode='w+',
                    shape=labels_processed.shape)
     dp[:] = labels_processed[:]
     dp.flush()
@@ -342,7 +347,7 @@ def sensor_data_prepare(window_size):
 
     # save shape
     dict = {'sensor': extractedData.shape, 'labels': labels_processed.shape}
-    file = open(dat_new_dir + '\\shape.txt', 'wb')
+    file = open(dat_new_dir + '/shape.txt', 'wb')
     pickle.dump(dict, file)
     file.close()
 
