@@ -124,7 +124,7 @@ class BaseModel(nn.Module):
                 for X_sensor, X_image, y in train_iterator:
                     X_sensor = X_sensor.to(self.__device)
                     X_image = X_image.to(self.__device)
-                    y = y.to(self.__device)
+                    y = y.to(self.__device).argmax(dim=1)
 
                     # perform the presiction and measure the loss between the prediction
                     # and the expected output

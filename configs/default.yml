@@ -7,11 +7,11 @@ evaluation: None
 
 # define the dataset arguments
 dataset_args:
-  window_size: 60
+  window_size: 10
 
 # define the dataloader arguments
 dataloader_args:
-  batch_size: 16
+  batch_size: 8
   num_workers: 1
   shuffle: True
 
