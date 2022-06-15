@@ -120,6 +120,27 @@ def explain_model(model: MultimodalModel):
     ax.set_title("Sensor Importance (bias included)")
     plt.savefig(f"{model.log_path}/sensor_importance_biases.png")
 
+    # alternative visualisation of sensor importance
+    data = np.array(sensor_importance[0])
+    data.resize((4, 6), refcheck=False)
+    fig, ax = plt.subplots()
+    cax = ax.matshow(data, cmap="Reds")
+    for (i, j), z in np.ndenumerate(data):
+        ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
+    fig.colorbar(cax)
+    plt.title("Sensor Importance (no bias)")
+    plt.savefig(f"{model.log_path}/sensor_importance_weights_alt.png")
+    
+    data = np.array(sensor_importance[1])
+    data.resize((4, 6), refcheck=False)
+    fig, ax = plt.subplots()
+    cax = ax.matshow(data, cmap="Reds")
+    for (i, j), z in np.ndenumerate(data):
+        ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
+    fig.colorbar(cax)
+    plt.title("Sensor Importance (bias included)")
+    plt.savefig(f"{model.log_path}/sensor_importance_biases_alt.png")
+
 
 def test():
     test = prepare_data(mode="test")
