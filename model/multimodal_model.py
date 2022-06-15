@@ -40,7 +40,12 @@ class MultimodalModel(BaseModel):
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
     
     def sensor_importance(self) -> np.array:
-        return self.__sensor_module.first_layer_params()
+        weights, biases = self.__sensor_module.first_layer_params()
+        
+        weights_dist = np.exp(weights) / np.sum(np.exp(weights))
+        biases_dist = np.exp(biases) / np.sum(np.exp(biases))
+
+        return weights_dist, biases_dist
 
     def sensor_image_ratio(self) -> float:
         """This method calculates the importance of sensor data vs. image data
@@ -87,6 +92,7 @@ class MultimodalModel(BaseModel):
 
         # the mean of the last weights of x_sensor and x_image can be compared
         # to determine the image- or sensordata importance
+        # use: sensor_image_ratio()
 
         # concatenate both data paths
         x = torch.cat((x_sensor, x_image), -1)
