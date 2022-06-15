@@ -302,9 +302,10 @@ def sensor_data_prepare(window_size):
     '26: X accel filtered by KF (Gs)' \
     '27: Y accel filtered by KF (Gs)' \
     '28: Z accel filtered by KF (Gs)'
+    '0: Time'
 
 
-    idx_OUT_columns = [6, 3, 7, 11, 12, 13, 21, 29, 30, 31, 36, 37, 38, 39, 40]
+    idx_OUT_columns = [0,6, 3, 7, 11, 12, 13, 21,26,27,28, 29, 30, 31, 36, 37, 38, 39, 40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:, :, idx_IN_columns]
 
