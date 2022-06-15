@@ -14,8 +14,7 @@ import shutil
 import pickle
 from datetime import datetime
 import argparse
-from sklearn.preprocessing import LabelEncoder
-
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # TODO: find missing headers: have a look into their data reader again
 # EFFORT: 2h (at most)
@@ -146,6 +145,7 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
             print(f"Mood: {mood}")
             for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
+                    #TODO not correct
                     t = initial_threshold
                 elif int(window.iloc[-1, 0]) > t:
                     windowed[i] = window
@@ -308,13 +308,27 @@ def sensor_data_prepare(window_size):
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:, :, idx_IN_columns]
 
+    extractedData = extractedData.astype(np.float32)
+    #Remone NaN values
+    extractedData = np.nan_to_num(extractedData, copy=True, nan=0.0, posinf=None, neginf=None)
+
     #Normalize train by feautures (column)
+    scalers = {}
+    for i in range(extractedData.shape[2]):
+        scalers[i] = StandardScaler()
+        extractedData[:, :, i] = scalers[i].fit_transform(extractedData[:, :, i]) 
+
+    #for test
+    '''for i in range(extractedData.shape[2]):
+        extractedData[:, :, i] = scalers[i].transform(extractedData[:, :, i])'''
+
+    """#Normalize train by feautures (column)
     # FIXME: normalize over the whole dataset
     for j in range(len(extractedData)):
         df1=pd.DataFrame(extractedData[j])
         for i in range (0, len(idx_IN_columns)):
             df1[i] = df1[i] / (df1[i].abs().max()+0.01)
-        extractedData[j]=df1.to_numpy()
+        extractedData[j]=df1.to_numpy()"""
 
     # save data to .dat format
     dat_new_dir = './uah_dataset/processed_dataset/sensor'
