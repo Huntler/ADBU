@@ -27,12 +27,11 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         id = self.indices[index]
-        labels = self.labels[[index]].astype(np.float32)
+        labels = self.labels[index].astype(np.float32) #[[index]] to retain dimension
         if isinstance(index, int):
             images = np.reshape(np.load('./uah_dataset/processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id) + ".npy"), (self.window_size, 224,224, 3))
             images = images.astype(np.float32) / 255
-            print('here')
-            return (self.sensor_data[[index]], images[np.newaxis,...] , labels)
+            return (self.sensor_data[index], images , labels) # [[index]] to retain dims | [np.newaxis,...] for images
 
         else:
             length = len(id)-1
