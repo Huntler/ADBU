@@ -4,11 +4,11 @@ import os
 import pickle
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, ) -> None: #window_size: int
+    def __init__(self, window_size: int) -> None:
         super().__init__()
 
         #provide with window size of data you want to load
-        self.window_size = 2
+        self.window_size = window_size
 
         # load all matrices
         self.indices = [i for i in range(2937)]
