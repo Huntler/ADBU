@@ -172,11 +172,11 @@ class BaseModel(nn.Module):
 
                 logger.count(CustomMetricsLogger.EPOCH)
 
-            # save the model every X epoch
-            if e % save_every == 0:
-                self.eval()
-                BaseModel.save_to_default(self)
-                self.train()
+                # save the model every X epoch
+                if e % save_every == 0:
+                    self.eval()
+                    BaseModel.save_to_default(self)
+                    self.train()
 
         self.eval()
 
