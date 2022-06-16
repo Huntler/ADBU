@@ -247,8 +247,8 @@ def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
 
             for i in mood_df:
                 # FIXME: window size can be smaller than specified
-                if mood_df[i].shape[0] != window_size:
-                    continue
+                #if mood_df[i].shape[0] != window_size:
+                #    continue
                 train = np.concatenate((train, mood_df[i].values[np.newaxis,...]), axis=0)
                 labels = np.concatenate((labels, label[np.newaxis,...]), axis=0)
             print('Iteration passed')
