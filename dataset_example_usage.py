@@ -14,8 +14,7 @@ import shutil
 import pickle
 from datetime import datetime
 import argparse
-from sklearn.preprocessing import LabelEncoder
-
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # TODO: find missing headers: have a look into their data reader again
 # EFFORT: 2h (at most)
@@ -144,10 +143,35 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
             windowed = {}
             t = initial_threshold                                    #first window ends at a point where more than t seconds have passed
             print(f"Mood: {mood}")
-            for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
+            '''for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
+                if window.shape != (2,41):
+                    print('something went wrong')
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
+                    #TODO keep an eye om this
                     t = initial_threshold
                 elif int(window.iloc[-1, 0]) > t:
+                    #TODO time does not begin from zero
+                    windowed[i] = window
+                    i += 1
+                    t += increment                     #creates 10 second windows
+                    window_number += 1
+                    time = (window.iloc[-1, 0]-window.iloc[0,0])+1
+                    window_time += time
+                    time_difference.append(time)'''
+
+            for i in mood_df.index:
+                try:
+                    window = mood_df[i:i+window_size]
+                except Exception:
+                    pass
+                if window.shape != (window_size,41):
+                    print('pass')
+                    pass
+                if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
+                    #TODO keep an eye om this
+                    t = initial_threshold
+                elif int(window.iloc[-1, 0]) > t:
+                    #TODO time does not begin from zero
                     windowed[i] = window
                     i += 1
                     t += increment                     #creates 10 second windows
@@ -223,8 +247,8 @@ def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
 
             for i in mood_df:
                 # FIXME: window size can be smaller than specified
-                if mood_df[i].shape[0] != window_size:
-                    continue
+                #if mood_df[i].shape[0] != window_size:
+                #    continue
                 train = np.concatenate((train, mood_df[i].values[np.newaxis,...]), axis=0)
                 labels = np.concatenate((labels, label[np.newaxis,...]), axis=0)
             print('Iteration passed')
@@ -302,19 +326,34 @@ def sensor_data_prepare(window_size):
     '26: X accel filtered by KF (Gs)' \
     '27: Y accel filtered by KF (Gs)' \
     '28: Z accel filtered by KF (Gs)'
+    '0: Time'
 
 
-    idx_OUT_columns = [6, 3, 7, 11, 12, 13, 21, 29, 30, 31, 36, 37, 38, 39, 40]
+    idx_OUT_columns = [0,6, 3, 7, 11, 12, 13, 21,26,27,28, 29, 30, 31, 36, 37, 38, 39, 40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:, :, idx_IN_columns]
 
+    extractedData = extractedData.astype(np.float32)
+    #Remone NaN values
+    extractedData = np.nan_to_num(extractedData, copy=True, nan=0.0, posinf=None, neginf=None)
+
     #Normalize train by feautures (column)
+    scalers = {}
+    for i in range(extractedData.shape[2]):
+        scalers[i] = StandardScaler()
+        extractedData[:, :, i] = scalers[i].fit_transform(extractedData[:, :, i]) 
+
+    #for test
+    '''for i in range(extractedData.shape[2]):
+        extractedData[:, :, i] = scalers[i].transform(extractedData[:, :, i])'''
+
+    """#Normalize train by feautures (column)
     # FIXME: normalize over the whole dataset
     for j in range(len(extractedData)):
         df1=pd.DataFrame(extractedData[j])
         for i in range (0, len(idx_IN_columns)):
             df1[i] = df1[i] / (df1[i].abs().max()+0.01)
-        extractedData[j]=df1.to_numpy()
+        extractedData[j]=df1.to_numpy()"""
 
     # save data to .dat format
     dat_new_dir = './uah_dataset/processed_dataset/sensor'
@@ -358,13 +397,11 @@ if __name__ == "__main__":
     dataset = UAHDataset()
     road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
 
-    # parser = argparse.ArgumentParser(description='Preprocessing stage')
-    # parser.add_argument('--window_size', type=int, help='window_size', required=True)
-    #
-    # args = parser.parse_args()
-    #
-    # window_size = args.window_size
-    window_size = 10
+    parser = argparse.ArgumentParser(description='Preprocessing stage')
+    parser.add_argument('--window_size', type=int, help='window_size', required=True)
+    args = parser.parse_args()
+    window_size = args.window_size
+    
     (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
     print(indexing, n_samples)
     fps = (window_size/60)

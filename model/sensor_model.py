@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Tuple
 import numpy as np
 from torch import nn
 import torch
@@ -9,9 +9,10 @@ class SensorModel(nn.Module):
         super(SensorModel, self).__init__()
 
         # dense network to understand the sensor features
+        self.__input_layer = nn.Linear(self.num_features, 64)
         self.fc = nn.Linear(64, self.num_features)
         self.__model = nn.Sequential(
-            nn.Linear(36, 64),
+            self.__input_layer,
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
@@ -20,13 +21,21 @@ class SensorModel(nn.Module):
 
     @property
     def num_features(self) -> int:
-        return 36
+        return 22
 
-    def first_layer_params(self) -> np.array:
+    def first_layer_params(self) -> Tuple[np.array]:
         """Method extracts the weights of the first layer and returns them.
         """
-        # TODO: 
-        pass
+        weights = biases = None
+        for name, params in self.__input_layer.named_parameters():
+            if name == "weight":
+                weights = params.data.cpu().numpy()
+            else:
+                biases = params.data.cpu().numpy()
+
+        weights_processed = np.sum(np.abs(weights), axis=0)
+        biases_included = np.abs(np.dot(weights.T, biases))
+        return weights_processed, biases_included
     
     def forward(self, x: torch.tensor) -> Any:
         # reshape the tensor, so the sequence is part of a batch

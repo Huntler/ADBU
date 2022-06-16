@@ -97,6 +97,16 @@ class BaseModel(nn.Module):
         """
         raise NotImplementedError
 
+    def __single_accuracy(self, y_pred, y_test) -> float:
+        y_pred_softmax = torch.log_softmax(y_pred, dim=1)
+        _, y_pred_tags = torch.max(y_pred_softmax, dim=1)
+
+        correct_pred = (y_pred_tags == torch.flatten(y_test)).float()
+        acc = correct_pred.sum() / len(correct_pred)
+        acc = torch.round(acc * 100)
+
+        return acc.detach().cpu().item()
+
     def learn(self, train, validate=None, test=None, epochs: int = 1, save_every: int = -1, verbose: bool = False):
         """This method trains the model using the trainset. A validation- and testset can be specified 
         to measure the models generalization.
@@ -121,10 +131,10 @@ class BaseModel(nn.Module):
                 losses = []
 
                 # run for each batch in training set
-                for X, y in train_iterator:
-                    X_sensor = X[0].to(self.__device)
-                    X_image = X[1].to(self.__device)
-                    y = y.to(self.__device)
+                for X_sensor, X_image, y in train_iterator:
+                    X_sensor = X_sensor.to(self.__device)
+                    X_image = X_image.to(self.__device)
+                    y = y.to(self.__device).argmax(dim=1)
 
                     # perform the presiction and measure the loss between the prediction
                     # and the expected output
@@ -189,9 +199,10 @@ class BaseModel(nn.Module):
 
             # predict all y's of the validation set and append the model's accuracy 
             # to the list
-            for X, y in dataloader:
-                X_sensor = X[0].to(self.__device)
-                X_image = X[1].to(self.__device)
+            for X_sensor, X_image, y in dataloader:
+                X_sensor = X_sensor.to(self.__device)
+                X_image = X_image.to(self.__device)
+                y = y.to(self.__device)
 
                 _y = self((X_sensor, X_image))
 
@@ -199,7 +210,7 @@ class BaseModel(nn.Module):
                 loss = self.loss_fn(_y, y)
 
                 losses.append(loss.item())
-                accuracies.append(1 - loss.item())
+                accuracies.append(self.__single_accuracy(_y, y))
 
             # calculate some statistics based on the data collected and log them
             accuracy = np.mean(np.array(accuracies))
@@ -229,18 +240,18 @@ class BaseModel(nn.Module):
             
             # predict all y's of the validation set and append the model's accuracy 
             # to the list
-            for X, y in dataloader:
-                X_sensor = X[0].to(self.__device)
-                X_image = X[1].to(self.__device)
+            for X_sensor, X_image, y in dataloader:
+                X_sensor = X_sensor.to(self.__device)
+                X_image = X_image.to(self.__device)
+                y = y.to(self.__device)
 
                 _y = self((X_sensor, X_image))
-
 
                 y = y.to(self.__device)
                 loss = self.loss_fn(_y, y)
 
                 losses.append(loss.item())
-                accuracies.append(1 - loss.item())
+                accuracies.append(self.__single_accuracy(_y, y))
 
             # calculate some statistics based on the data collected
             accuracy = np.mean(np.array(accuracies))

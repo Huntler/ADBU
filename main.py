@@ -2,12 +2,15 @@ import argparse
 import math
 from multiprocessing import freeze_support
 import os
+import matplotlib.pyplot as plt
+import numpy as np
 
 from torch.utils.data import DataLoader
 import torch
 
 # our libraries
 from model.base_model import BaseModel
+from model.multimodal_model import MultimodalModel
 from uah_dataset.dataset import Dataset
 from utils.config import config
 
@@ -77,18 +80,66 @@ def train():
     model: BaseModel = prepare_model()
 
     # FIXME: test, will be removed
-    print("Sensor to image importance ratio")
-    print(model.sensor_image_ratio())
-    print()
-
-    print("Per sensor importance")
-    print(model.sensor_importance())
+    explain_model(model)
     # the above, until FIXME is removed
 
     # train the model and save it in the end
     model.learn(train, validation, test, epochs=config_dict["train_epochs"],
                 save_every=config_dict["save_every"])
     BaseModel.save_to_default(model)
+
+
+def explain_model(model: MultimodalModel):
+    sensor_image = model.sensor_image_ratio()
+    sensor_importance = model.sensor_importance()
+
+    # pie diagram for sensor-image ratio
+    labels = "Sensor", "Image"
+    sizes = [100 * sensor_image, 100 * (1-sensor_image)]
+    colors = [plt.cm.Reds(.4), plt.cm.Reds(.7)]
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+    ax1.axis('equal')
+    ax1.set_title("Sensor-Image Ratio")
+    plt.savefig(f"{model.log_path}/sensor_image_ratio.png")
+
+    # bar diagram showing sensor importance
+    fig, ax = plt.subplots()
+    colors = [plt.cm.Reds(0.36 + .02 * i) for i in range(len(sensor_importance[0]))]
+    ax.bar(0.5 + np.arange(len(sensor_importance[0])), sensor_importance[0], color=colors)
+    ax.set_xlabel("Sensor ID")
+    ax.set_ylabel("Relative importance %")
+    ax.set_title("Sensor Importance (no bias)")
+    plt.savefig(f"{model.log_path}/sensor_importance_weights.png")
+
+    fig, ax = plt.subplots()
+    colors = [plt.cm.Reds(0.36 + .02 * i) for i in range(len(sensor_importance[1]))]
+    ax.bar(0.5 + np.arange(len(sensor_importance[1])), sensor_importance[1], color=colors)
+    ax.set_xlabel("Sensor ID")
+    ax.set_ylabel("Relative importance %")
+    ax.set_title("Sensor Importance (bias included)")
+    plt.savefig(f"{model.log_path}/sensor_importance_biases.png")
+
+    # alternative visualisation of sensor importance
+    data = np.array(sensor_importance[0])
+    data.resize((3, 6), refcheck=False)
+    fig, ax = plt.subplots()
+    cax = ax.matshow(data, cmap="Reds")
+    for (i, j), z in np.ndenumerate(data):
+        ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
+    fig.colorbar(cax)
+    plt.title("Sensor Importance (no bias)")
+    plt.savefig(f"{model.log_path}/sensor_importance_weights_alt.png")
+    
+    data = np.array(sensor_importance[1])
+    data.resize((3, 6), refcheck=False)
+    fig, ax = plt.subplots()
+    cax = ax.matshow(data, cmap="Reds")
+    for (i, j), z in np.ndenumerate(data):
+        ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
+    fig.colorbar(cax)
+    plt.title("Sensor Importance (bias included)")
+    plt.savefig(f"{model.log_path}/sensor_importance_biases_alt.png")
 
 
 def test():

@@ -1,4 +1,4 @@
-name: adbu
+name: adbu-gpu
 
 channels:
   - conda-forge
@@ -12,7 +12,7 @@ dependencies:
     - imageio
     - tqdm
     - pyyaml
-    - pytorch
+    - pytorch-gpu
     - torchvision
     - torchaudio
     - cudatoolkit=11.6

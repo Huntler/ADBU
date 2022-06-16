@@ -26,20 +26,20 @@ class ImageModel(nn.Module):
         # alternative: conv
         __alt_fc = nn.Linear(512, self.num_features)
         __alternative = nn.Sequential(
-            nn.Conv2d(3, 12, 3, 1, 0),
+            nn.Conv2d(3, 12, 7, 3, 0),
             nn.BatchNorm2d(12),
             nn.MaxPool2d(2),
             nn.Tanh(),
-            nn.Conv2d(12, 24, 3, 1, 0),
+            nn.Conv2d(12, 24, 5, 2, 0),
             nn.BatchNorm2d(24),
             nn.MaxPool2d(2),
             nn.Tanh(),
             nn.Conv2d(24, 32, 3, 1, 0),
             nn.BatchNorm2d(32),
             nn.Flatten(),
-            nn.Linear(2048, 1024),
+            nn.Linear(1152, 768),
             nn.ReLU(),
-            nn.Linear(1024, 512),
+            nn.Linear(768, 512),
             nn.ReLU(),
             __alt_fc
         )
