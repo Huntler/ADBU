@@ -21,7 +21,7 @@ class SensorModel(nn.Module):
 
     @property
     def num_features(self) -> int:
-        return 26
+        return 22
 
     def first_layer_params(self) -> Tuple[np.array]:
         """Method extracts the weights of the first layer and returns them.
