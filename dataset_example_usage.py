@@ -143,11 +143,35 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
             windowed = {}
             t = initial_threshold                                    #first window ends at a point where more than t seconds have passed
             print(f"Mood: {mood}")
-            for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
+            '''for window in mood_df.rolling(window = rows_per_minute, min_periods = rows_per_minute):
+                if window.shape != (2,41):
+                    print('something went wrong')
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
-                    #TODO not correct
+                    #TODO keep an eye om this
                     t = initial_threshold
                 elif int(window.iloc[-1, 0]) > t:
+                    #TODO time does not begin from zero
+                    windowed[i] = window
+                    i += 1
+                    t += increment                     #creates 10 second windows
+                    window_number += 1
+                    time = (window.iloc[-1, 0]-window.iloc[0,0])+1
+                    window_time += time
+                    time_difference.append(time)'''
+
+            for i in mood_df.index:
+                try:
+                    window = mood_df[i:i+window_size]
+                except Exception:
+                    pass
+                if window.shape != (window_size,41):
+                    print('pass')
+                    pass
+                if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
+                    #TODO keep an eye om this
+                    t = initial_threshold
+                elif int(window.iloc[-1, 0]) > t:
+                    #TODO time does not begin from zero
                     windowed[i] = window
                     i += 1
                     t += increment                     #creates 10 second windows
