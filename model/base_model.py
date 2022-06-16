@@ -202,7 +202,7 @@ class BaseModel(nn.Module):
             for X_sensor, X_image, y in dataloader:
                 X_sensor = X_sensor.to(self.__device)
                 X_image = X_image.to(self.__device)
-                y = y.to(self.__device)
+                y = y.to(self.__device).argmax(dim=1)
 
                 _y = self((X_sensor, X_image))
 
@@ -243,7 +243,7 @@ class BaseModel(nn.Module):
             for X_sensor, X_image, y in dataloader:
                 X_sensor = X_sensor.to(self.__device)
                 X_image = X_image.to(self.__device)
-                y = y.to(self.__device)
+                y = y.to(self.__device).argmax(dim=1)
 
                 _y = self((X_sensor, X_image))
 

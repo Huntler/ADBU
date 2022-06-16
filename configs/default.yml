@@ -11,7 +11,7 @@ dataset_args:
 
 # define the dataloader arguments
 dataloader_args:
-  batch_size: 8
+  batch_size: 4
   num_workers: 1
   shuffle: True
 
@@ -28,9 +28,9 @@ save_every: 5
 model_args:
   tag: Multimodal_v1/default
   log: True
-  lr: 0.003
+  lr: 0.0005
   lr_decay: 0.9
-  weight_decay: 0.05
+  weight_decay: 0.01
   resnet: True
   lstm_layers: 2
   lstm_hidden: 128

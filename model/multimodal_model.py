@@ -11,7 +11,7 @@ from model.sensor_model import SensorModel
 
 
 class MultimodalModel(BaseModel):
-    def __init__(self, tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, 
+    def __init__(self, tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, momentum: float = 0.9,
                  resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, log: bool = True) -> None:
         self.writer = None        
         super(MultimodalModel, self).__init__(tag, log)
@@ -37,7 +37,7 @@ class MultimodalModel(BaseModel):
         # define optimizer, loss function and scheduler as BaseModel needs
         self.loss_fn = torch.nn.CrossEntropyLoss()
         # self.optim = torch.optim.AdamW(self.parameters(), lr=lr, betas=[0.99, 0.999], weight_decay=weight_decay)
-        self.optim = torch.optim.SGD(self.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
+        self.optim = torch.optim.SGD(self.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
     
     def sensor_importance(self) -> np.array:
