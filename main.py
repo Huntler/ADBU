@@ -122,7 +122,7 @@ def explain_model(model: MultimodalModel):
 
     # alternative visualisation of sensor importance
     data = np.array(sensor_importance[0])
-    data.resize((4, 6), refcheck=False)
+    data.resize((3, 6), refcheck=False)
     fig, ax = plt.subplots()
     cax = ax.matshow(data, cmap="Reds")
     for (i, j), z in np.ndenumerate(data):
@@ -132,7 +132,7 @@ def explain_model(model: MultimodalModel):
     plt.savefig(f"{model.log_path}/sensor_importance_weights_alt.png")
     
     data = np.array(sensor_importance[1])
-    data.resize((4, 6), refcheck=False)
+    data.resize((3, 6), refcheck=False)
     fig, ax = plt.subplots()
     cax = ax.matshow(data, cmap="Reds")
     for (i, j), z in np.ndenumerate(data):
