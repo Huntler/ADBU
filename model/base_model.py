@@ -75,7 +75,7 @@ class BaseModel(nn.Module):
 
         # save the model
         model_tag = datetime.now().strftime("%H%M%S")
-        torch.save(model.state_dict(), f"{model._tb_path}/model_{model_tag}.torch")
+        torch.save(model.state_dict(), f"{model.log_path}/model_{model_tag}.torch")
 
         # and move it back to the original device
         model.use_device(dev)
