@@ -21,17 +21,17 @@ model_name: Multimodal_v1
 
 # set the amount of epochs to train and specify intermediate
 # savings
-train_epochs: 15
-save_every: 5
+train_epochs: 80
+save_every: 10
 
 # configure the model
 model_args:
-  tag: Multimodal_v1/default
+  tag: Multimodal_v1/ws_10/lstm_2
   log: True
   lr: 0.0005
   momentum: 0.8
   lr_decay: 0.95
   weight_decay: 0.01
   resnet: True
-  lstm_layers: 2
+  lstm_layers: 4
   lstm_hidden: 128

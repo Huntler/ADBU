@@ -7,7 +7,7 @@ evaluation: None
 
 # define the dataset arguments
 dataset_args:
-  window_size: 10
+  window_size: 30
 
 # define the dataloader arguments
 dataloader_args:
@@ -21,12 +21,12 @@ model_name: Multimodal_v1
 
 # set the amount of epochs to train and specify intermediate
 # savings
-train_epochs: 15
-save_every: 5
+train_epochs: 50
+save_every: 10
 
 # configure the model
 model_args:
-  tag: Multimodal_v1/default
+  tag: Multimodal_v1/ws_10/lstm_2
   log: True
   lr: 0.0005
   momentum: 0.8
