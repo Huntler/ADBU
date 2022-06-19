@@ -27,7 +27,9 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         id = self.indices[index]
+        # we need the class number, not onehot encoded to use cross-entropy as loss function
         labels = self.labels[index].astype(np.float32) #[[index]] to retain dimension
+        labels = np.argmax(labels)
         if isinstance(index, int):
             images = np.reshape(np.load('./uah_dataset/processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id) + ".npy"), (self.window_size, 224,224, 3))
             images = images.astype(np.float32) / 255
@@ -77,8 +79,12 @@ class Dataset(torch.utils.data.Dataset):
 
 if __name__ == "__main__":
     # TODO: perform our tests
-    d = Dataset()
+    d = Dataset(window_size=30)
     sensor, image, label = d[0:5]
     print(sensor.shape)
     print(image.shape)
     print(label.shape)
+    for X in d:
+        sensor, image, y = X
+        y = y
+        print(sensor[0], image.shape, np.argmax(y))

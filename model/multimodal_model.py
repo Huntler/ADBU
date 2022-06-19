@@ -1,8 +1,10 @@
+from typing import Tuple
 from unicodedata import bidirectional
 import numpy as np
 from torch.optim.lr_scheduler import ExponentialLR
 from torch import nn
 import torch
+import torch.autograd as autograd
 
 # our code
 from model.base_model import BaseModel
@@ -25,6 +27,8 @@ class MultimodalModel(BaseModel):
         # add LSTM
         lstm_in = self.__image_module.num_features + self.__sensor_module.num_features
         self.__lstm = nn.LSTM(lstm_in, lstm_hidden, num_layers=lstm_layers, bidirectional=False, batch_first=True)
+        self.__lstm_layers = lstm_layers
+        self.__hidden_dim = lstm_hidden
 
         # add classifier output inclunding some dense layers
         self.__dense = nn.Sequential(
@@ -40,6 +44,10 @@ class MultimodalModel(BaseModel):
         self.optim = torch.optim.SGD(self.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
     
+    def __init_hidden(self, batch_size) -> Tuple[torch.tensor]:
+        return (autograd.Variable(torch.zeros(self.__lstm_layers, batch_size, self.__hidden_dim, device=self.device)),
+                autograd.Variable(torch.zeros(self.__lstm_layers, batch_size, self.__hidden_dim, device=self.device)))
+
     def sensor_importance(self) -> np.array:
         weights, biases = self.__sensor_module.first_layer_params()
         
@@ -99,7 +107,8 @@ class MultimodalModel(BaseModel):
         x = torch.cat((x_sensor, x_image), -1)
 
         # pass the combination of both into a LSTM
-        x, _ = self.__lstm(x)
+        hidden = self.__init_hidden(x.shape[0])
+        x, hidden = self.__lstm(x, hidden)
         x = x[:, -1, :]
         x = self.__dense(x)
 
