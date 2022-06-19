@@ -18,14 +18,13 @@ class MultimodalModel(BaseModel):
         self.writer = None        
         super(MultimodalModel, self).__init__(tag, log)
 
-        # add image model
-        self.__image_module = ImageModel(resnet=resnet)
-
-        # add sensor model
-        self.__sensor_module = SensorModel()
+        self.__submodels = nn.ModuleDict({
+            "image": ImageModel(resnet=resnet),
+            "sensor": SensorModel()
+        })
 
         # add LSTM
-        lstm_in = self.__image_module.num_features + self.__sensor_module.num_features
+        lstm_in = self.__submodels["image"].num_features + 128
         self.__lstm = nn.LSTM(lstm_in, lstm_hidden, num_layers=lstm_layers, bidirectional=False, batch_first=True)
         self.__lstm_layers = lstm_layers
         self.__hidden_dim = lstm_hidden
@@ -33,6 +32,8 @@ class MultimodalModel(BaseModel):
         # add classifier output inclunding some dense layers
         self.__dense = nn.Sequential(
             nn.Flatten(),
+            nn.Linear(lstm_hidden, 128),
+            nn.ReLU(),
             nn.Linear(lstm_hidden, 64),
             nn.ReLU(),
             nn.Linear(64, 3)
@@ -41,6 +42,7 @@ class MultimodalModel(BaseModel):
         # define optimizer, loss function and scheduler as BaseModel needs
         self.loss_fn = torch.nn.CrossEntropyLoss()
         # self.optim = torch.optim.AdamW(self.parameters(), lr=lr, betas=[0.99, 0.999], weight_decay=weight_decay)
+        # params = list(self.parameters()) + list(self.__image_module.parameters()) + list(self.__sensor_module.parameters())
         self.optim = torch.optim.SGD(self.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
     
@@ -49,7 +51,7 @@ class MultimodalModel(BaseModel):
                 autograd.Variable(torch.zeros(self.__lstm_layers, batch_size, self.__hidden_dim, device=self.device)))
 
     def sensor_importance(self) -> np.array:
-        weights, biases = self.__sensor_module.first_layer_params()
+        weights, biases = self.__submodels["sensor"].first_layer_params()
         
         weights_dist = np.exp(weights) / np.sum(np.exp(weights))
         biases_dist = np.exp(biases) / np.sum(np.exp(biases))
@@ -65,7 +67,7 @@ class MultimodalModel(BaseModel):
         """
         # get mean of image fc parameters
         image_mean = 0
-        image_fc = self.__image_module.fc
+        image_fc = self.__submodels["image"].fc
         for name, param in image_fc.named_parameters():
             # name is either 'bias' or 'weight'
             # get params and apply ReLU
@@ -76,7 +78,7 @@ class MultimodalModel(BaseModel):
 
         # get mean of sensor fc parameters
         sensor_mean = 0
-        sensor_fc = self.__sensor_module.fc
+        sensor_fc = self.__submodels["sensor"].fc
         for name, param in sensor_fc.named_parameters():
             # name is either 'bias' or 'weight'
             # get params and apply ReLU
@@ -92,11 +94,11 @@ class MultimodalModel(BaseModel):
         x_sensor, x_image = X
 
         # pass the image data through the image model
-        x_image = self.__image_module(x_image)
+        x_image = self.__submodels["image"](x_image)
         x_image = torch.relu(x_image)
 
         # pass the sensor data through the sensor model
-        x_sensor = self.__sensor_module(x_sensor)
+        x_sensor = self.__submodels["sensor"](x_sensor)
         x_sensor = torch.relu(x_sensor)
 
         # the mean of the last weights of x_sensor and x_image can be compared
@@ -107,8 +109,9 @@ class MultimodalModel(BaseModel):
         x = torch.cat((x_sensor, x_image), -1)
 
         # pass the combination of both into a LSTM
-        hidden = self.__init_hidden(x.shape[0])
-        x, hidden = self.__lstm(x, hidden)
+        # hidden = self.__init_hidden(x.shape[0])
+        # x, hidden = self.__lstm(x, hidden)
+        x, _ = self.__lstm(x)
         x = x[:, -1, :]
         x = self.__dense(x)
 
