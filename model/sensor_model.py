@@ -10,16 +10,10 @@ class SensorModel(nn.Module):
 
         # dense network to understand the sensor features
         self.__input_layer = nn.Linear(self.num_features, 64)
-        self.fc = nn.Linear(256, 128)
+        self.fc = nn.Linear(64, 128)
         self.__model = nn.Sequential(
             self.__input_layer,
-            nn.LeakyReLU(),
-            nn.Linear(64, 128),
-            nn.LeakyReLU(),
-            nn.Linear(128, 196),
-            nn.LeakyReLU(),
-            nn.Linear(196, 256),
-            nn.LeakyReLU(),
+            nn.LeakyReLU(),            
             self.fc
         )
 

@@ -6,6 +6,7 @@ parser.add_argument("--folder", dest="config_folder", help="Set path to config f
 args = parser.parse_args()
 
 config_files = os.listdir(args.config_folder)
+config_files.sort()
 print(f"Found {len(config_files)} configurations.")
 for config in config_files:
     print(f"Starting training for {config}.")

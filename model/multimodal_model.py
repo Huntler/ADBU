@@ -2,7 +2,7 @@ from typing import Tuple
 from unicodedata import bidirectional
 import numpy as np
 from torch.optim.lr_scheduler import ExponentialLR
-from torch import nn
+from torch import dropout, nn
 import torch
 import torch.autograd as autograd
 
@@ -14,7 +14,8 @@ from model.sensor_model import SensorModel
 
 class MultimodalModel(BaseModel):
     def __init__(self, tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, momentum: float = 0.9,
-                 resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, window_size: int = 30, log: bool = True) -> None:
+                 resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, dropout: float = 0.0, window_size: int = 30, 
+                 log: bool = True) -> None:
         self.writer = None        
         super(MultimodalModel, self).__init__(tag, log)
 
@@ -25,7 +26,7 @@ class MultimodalModel(BaseModel):
 
         # add LSTM
         lstm_in = self.__submodels["image"].num_features + 128
-        self.__lstm = nn.LSTM(lstm_in, lstm_hidden, num_layers=lstm_layers, bidirectional=False, batch_first=True)
+        self.__lstm = nn.LSTM(lstm_in, lstm_hidden, num_layers=lstm_layers, bidirectional=False, dropout=dropout, batch_first=True)
         self.__lstm_layers = lstm_layers
         self.__hidden_dim = lstm_hidden
 

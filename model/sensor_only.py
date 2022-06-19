@@ -6,7 +6,8 @@ from torch.optim.lr_scheduler import ExponentialLR
 
 class SensorOnly(BaseModel):
     def __init__(self, tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, momentum: float = 0.9,
-                 resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, window_size: int = 30, log: bool = True) -> None:
+                 resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, dropout: float = 0.0, window_size: int = 30, 
+                 log: bool = True) -> None:
         self.writer = None        
         super().__init__(tag, log)
 
@@ -19,16 +20,16 @@ class SensorOnly(BaseModel):
         )
 
          # add LSTM
-        self.__lstm = nn.LSTM(128, lstm_hidden, num_layers=lstm_layers, bidirectional=False, batch_first=True)
+        self.__lstm = nn.LSTM(128, lstm_hidden, num_layers=lstm_layers, bidirectional=False, dropout=dropout, batch_first=True)
 
         # add classifier output inclunding some dense layers
         conv_out_size = (lstm_hidden - 8) * (window_size // 8)
         self.__dense = nn.Sequential(
-            nn.Conv1d(30, 20, 5, 1, 0),
-            nn.BatchNorm1d(20),
+            nn.Conv1d(window_size // 4, 20, 5, 1, 0),
+            nn.BatchNorm1d(window_size // 4),
             nn.Tanh(),
-            nn.Conv1d(20, 10, 5, 1, 0),
-            nn.BatchNorm1d(10),
+            nn.Conv1d(window_size // 4, window_size // 8, 5, 1, 0),
+            nn.BatchNorm1d(window_size // 8),
             nn.Tanh(),
             nn.Flatten(),
             nn.Linear(conv_out_size, 512),
