@@ -42,9 +42,9 @@ class ImageModel(nn.Module):
                 nn.BatchNorm2d(32),
                 nn.Flatten(),
                 nn.Linear(1152, 768),
-                nn.ReLU(),
+                nn.LeakyReLU(),
                 nn.Linear(768, 512),
-                nn.ReLU(),
+                nn.LeakyReLU(),
                 __alt_fc
             )
 

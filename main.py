@@ -44,7 +44,8 @@ def prepare_model():
 
     # create the model, by loading its class name
     model_name = config_dict["model_name"]
-    model: BaseModel = config.get_model(model_name)(**config_dict["model_args"])
+    window_size = config_dict["dataset_args"]["window_size"]
+    model: BaseModel = config.get_model(model_name)(**config_dict["model_args"], window_size=window_size)
     model.use_device(config_dict["device"])
 
     # define log path in config and move the current hyperparameters to

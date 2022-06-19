@@ -14,7 +14,7 @@ from model.sensor_model import SensorModel
 
 class MultimodalModel(BaseModel):
     def __init__(self, tag: str, lr: float = 3e-3, lr_decay: float = 9e-1, weight_decay: float = 1e-2, momentum: float = 0.9,
-                 resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, log: bool = True) -> None:
+                 resnet: bool = True, lstm_layers: int = 2, lstm_hidden: int = 128, window_size: int = 30, log: bool = True) -> None:
         self.writer = None        
         super(MultimodalModel, self).__init__(tag, log)
 
@@ -30,20 +30,27 @@ class MultimodalModel(BaseModel):
         self.__hidden_dim = lstm_hidden
 
         # add classifier output inclunding some dense layers
+        conv_out_size = (lstm_hidden - 8) * (window_size // 8)
         self.__dense = nn.Sequential(
+            nn.Conv1d(window_size, window_size // 4, 5, 1, 0),
+            nn.BatchNorm1d(window_size // 4),
+            nn.Tanh(),
+            nn.Conv1d(window_size // 4, window_size // 8, 5, 1, 0),
+            nn.BatchNorm1d(window_size // 8),
+            nn.Tanh(),
             nn.Flatten(),
-            nn.Linear(lstm_hidden, 128),
-            nn.ReLU(),
-            nn.Linear(lstm_hidden, 64),
-            nn.ReLU(),
-            nn.Linear(64, 3)
+            nn.Linear(conv_out_size, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 128),
+            nn.LeakyReLU(),
+            nn.Linear(128, 3)
         )
 
         # define optimizer, loss function and scheduler as BaseModel needs
         self.loss_fn = torch.nn.CrossEntropyLoss()
         # self.optim = torch.optim.AdamW(self.parameters(), lr=lr, betas=[0.99, 0.999], weight_decay=weight_decay)
         # params = list(self.parameters()) + list(self.__image_module.parameters()) + list(self.__sensor_module.parameters())
-        self.optim = torch.optim.SGD(self.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+        self.optim = torch.optim.SGD(filter(lambda p: p.requires_grad, self.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
     
     def __init_hidden(self, batch_size) -> Tuple[torch.tensor]:
@@ -112,7 +119,6 @@ class MultimodalModel(BaseModel):
         # hidden = self.__init_hidden(x.shape[0])
         # x, hidden = self.__lstm(x, hidden)
         x, _ = self.__lstm(x)
-        x = x[:, -1, :]
         x = self.__dense(x)
 
         return x
