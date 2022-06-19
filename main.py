@@ -79,17 +79,34 @@ def train():
     # prepare the model
     model: BaseModel = prepare_model()
 
-    # FIXME: test, will be removed
-    explain_model(model)
-    # the above, until FIXME is removed
+    # showing weight analysis before training
+    if config_dict["model_name"] == "Multimodal_v1":
+        explain_model(model, initial=True)
 
     # train the model and save it in the end
     model.learn(train, validation, test, epochs=config_dict["train_epochs"],
                 save_every=config_dict["save_every"])
     BaseModel.save_to_default(model)
 
+    # explain the model's weights
+    if config_dict["model_name"] == "Multimodal_v1":
+        explain_model(model)
 
-def explain_model(model: MultimodalModel):
+    # execute the model and look at results
+    for X in train:
+        sensor, image, label = X
+        sensor = sensor.to("cuda")
+        image = image.to("cuda")
+        label = label.to("cuda")
+        pred = model.forward((sensor, image)).argmax(dim=1)
+        print(pred, label)
+
+
+def explain_model(model: MultimodalModel, initial: bool = False):
+    path = model.log_path if not initial else f"{model.log_path}/initial"
+    if not os.path.exists(path):
+        os.mkdir(path)
+
     sensor_image = model.sensor_image_ratio()
     sensor_importance = model.sensor_importance()
 
@@ -101,7 +118,7 @@ def explain_model(model: MultimodalModel):
     ax1.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
     ax1.axis('equal')
     ax1.set_title("Sensor-Image Ratio")
-    plt.savefig(f"{model.log_path}/sensor_image_ratio.png")
+    plt.savefig(f"{path}/sensor_image_ratio.png")
 
     # bar diagram showing sensor importance
     fig, ax = plt.subplots()
@@ -110,7 +127,7 @@ def explain_model(model: MultimodalModel):
     ax.set_xlabel("Sensor ID")
     ax.set_ylabel("Relative importance %")
     ax.set_title("Sensor Importance (no bias)")
-    plt.savefig(f"{model.log_path}/sensor_importance_weights.png")
+    plt.savefig(f"{path}/sensor_importance_weights.png")
 
     fig, ax = plt.subplots()
     colors = [plt.cm.Reds(0.36 + .02 * i) for i in range(len(sensor_importance[1]))]
@@ -118,7 +135,7 @@ def explain_model(model: MultimodalModel):
     ax.set_xlabel("Sensor ID")
     ax.set_ylabel("Relative importance %")
     ax.set_title("Sensor Importance (bias included)")
-    plt.savefig(f"{model.log_path}/sensor_importance_biases.png")
+    plt.savefig(f"{path}/sensor_importance_biases.png")
 
     # alternative visualisation of sensor importance
     data = np.array(sensor_importance[0])
@@ -129,7 +146,7 @@ def explain_model(model: MultimodalModel):
         ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
     fig.colorbar(cax)
     plt.title("Sensor Importance (no bias)")
-    plt.savefig(f"{model.log_path}/sensor_importance_weights_alt.png")
+    plt.savefig(f"{path}/sensor_importance_weights_alt.png")
     
     data = np.array(sensor_importance[1])
     data.resize((3, 6), refcheck=False)
@@ -139,7 +156,7 @@ def explain_model(model: MultimodalModel):
         ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
     fig.colorbar(cax)
     plt.title("Sensor Importance (bias included)")
-    plt.savefig(f"{model.log_path}/sensor_importance_biases_alt.png")
+    plt.savefig(f"{path}/sensor_importance_biases_alt.png")
 
 
 def test():
