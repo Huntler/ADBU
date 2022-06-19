@@ -13,13 +13,13 @@ class SensorModel(nn.Module):
         self.fc = nn.Linear(256, 128)
         self.__model = nn.Sequential(
             self.__input_layer,
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(64, 128),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(128, 196),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(196, 256),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             self.fc
         )
 
