@@ -1,5 +1,6 @@
 from typing import Dict
 import yaml
+from model.full_multimodal_model import FullMultimodalModel
 
 from model.multimodal_model import MultimodalModel
 from model.base_model import BaseModel
@@ -54,3 +55,4 @@ class Config:
 # config.register_model(<NAME>, <MODEL_CLASS_NAME>)
 config = Config()
 config.register_model("Multimodal_v1", MultimodalModel)
+config.register_model("Multimodal_v2", FullMultimodalModel)
