@@ -136,6 +136,9 @@ class BaseModel(nn.Module):
                     X_image = X_image.to(self.__device)
                     y = y.to(self.__device)
 
+                    # reset the gradient 
+                    self.optim.zero_grad()
+                    
                     # perform the presiction and measure the loss between the prediction
                     # and the expected output
                     pred_y = self((X_sensor, X_image))
@@ -143,8 +146,7 @@ class BaseModel(nn.Module):
                     # calculate the gradient using backpropagation of the loss
                     loss = self.loss_fn(pred_y, y)
                     
-                    # reset the gradient and run backpropagation
-                    self.optim.zero_grad()
+                    # run backpropagation
                     loss.backward()
                     self.optim.step()
 
