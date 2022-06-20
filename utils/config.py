@@ -3,6 +3,7 @@ import yaml
 
 from model.multimodal_model import MultimodalModel
 from model.base_model import BaseModel
+from model.sensor_only import SensorOnly
 
 
 class Config:
@@ -54,3 +55,4 @@ class Config:
 # config.register_model(<NAME>, <MODEL_CLASS_NAME>)
 config = Config()
 config.register_model("Multimodal_v1", MultimodalModel)
+config.register_model("Sensor_v1", SensorOnly)

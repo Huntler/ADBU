@@ -26,12 +26,13 @@ save_every: 10
 
 # configure the model
 model_args:
-  tag: Multimodal_v1/ws_10/lstm_2
+  tag: Multimodal_v1/ws_60/lstm_2
   log: True
-  lr: 0.0005
+  lr: 0.001
   momentum: 0.8
-  lr_decay: 0.95
+  lr_decay: 0.98
   weight_decay: 0.01
+  dropout: 0.1
   resnet: True
   lstm_layers: 2
   lstm_hidden: 128

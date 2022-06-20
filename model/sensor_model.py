@@ -10,12 +10,10 @@ class SensorModel(nn.Module):
 
         # dense network to understand the sensor features
         self.__input_layer = nn.Linear(self.num_features, 64)
-        self.fc = nn.Linear(64, self.num_features)
+        self.fc = nn.Linear(64, 128)
         self.__model = nn.Sequential(
             self.__input_layer,
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
+            nn.LeakyReLU(),            
             self.fc
         )
 
@@ -46,6 +44,6 @@ class SensorModel(nn.Module):
         
         # reshape the tensor back to have the sequence as a separate
         # dimension
-        x = x.view(batch_size, seq_size, self.num_features)
+        x = x.view(batch_size, seq_size, 128)
 
         return x

@@ -26,7 +26,7 @@ class BaseModel(nn.Module):
         super(BaseModel, self).__init__()
 
         # enable tensorboard
-        if self.writer is None:
+        if self.writer is None and log:
             self.__tb_sub = datetime.now().strftime("%m-%d-%Y_%H%M%S")
             self.__tb_path = f"runs/{tag}/{self.__tb_sub}"
             self.writer = SummaryWriter(self.__tb_path)
@@ -46,6 +46,10 @@ class BaseModel(nn.Module):
     @property
     def log_path(self) -> str:
         return self.__tb_path
+    
+    @log_path.setter
+    def log_path(self, path: str) -> None:
+        self.__tb_path = path
     
     @property
     def device(self) -> str:
@@ -134,8 +138,11 @@ class BaseModel(nn.Module):
                 for X_sensor, X_image, y in train_iterator:
                     X_sensor = X_sensor.to(self.__device)
                     X_image = X_image.to(self.__device)
-                    y = y.to(self.__device).argmax(dim=1)
+                    y = y.to(self.__device)
 
+                    # reset the gradient 
+                    self.optim.zero_grad()
+                    
                     # perform the presiction and measure the loss between the prediction
                     # and the expected output
                     pred_y = self((X_sensor, X_image))
@@ -143,8 +150,7 @@ class BaseModel(nn.Module):
                     # calculate the gradient using backpropagation of the loss
                     loss = self.loss_fn(pred_y, y)
                     
-                    # reset the gradient and run backpropagation
-                    self.optim.zero_grad()
+                    # run backpropagation
                     loss.backward()
                     self.optim.step()
 
@@ -194,23 +200,24 @@ class BaseModel(nn.Module):
 
         # log to the tensorboard
         with CustomMetricsLogger(self.writer, "Validation") as logger:
-            # set the logger's pointer position
-            logger.count(CustomMetricsLogger.EPOCH, step)
+            with torch.no_grad():
+                # set the logger's pointer position
+                logger.count(CustomMetricsLogger.EPOCH, step)
 
-            # predict all y's of the validation set and append the model's accuracy 
-            # to the list
-            for X_sensor, X_image, y in dataloader:
-                X_sensor = X_sensor.to(self.__device)
-                X_image = X_image.to(self.__device)
-                y = y.to(self.__device).argmax(dim=1)
+                # predict all y's of the validation set and append the model's accuracy 
+                # to the list
+                for X_sensor, X_image, y in dataloader:
+                    X_sensor = X_sensor.to(self.__device)
+                    X_image = X_image.to(self.__device)
+                    y = y.to(self.__device)
 
-                _y = self((X_sensor, X_image))
+                    _y = self((X_sensor, X_image))
 
-                y = y.to(self.__device)
-                loss = self.loss_fn(_y, y)
+                    y = y.to(self.__device)
+                    loss = self.loss_fn(_y, y)
 
-                losses.append(loss.item())
-                accuracies.append(self.__single_accuracy(_y, y))
+                    losses.append(loss.item())
+                    accuracies.append(self.__single_accuracy(_y, y))
 
             # calculate some statistics based on the data collected and log them
             accuracy = np.mean(np.array(accuracies))
@@ -235,23 +242,24 @@ class BaseModel(nn.Module):
 
         # log to the tensorboard
         with CustomMetricsLogger(self.writer, "Test") as logger:
-            # set the logger's pointer position
-            logger.count(CustomMetricsLogger.EPOCH, step)
-            
-            # predict all y's of the validation set and append the model's accuracy 
-            # to the list
-            for X_sensor, X_image, y in dataloader:
-                X_sensor = X_sensor.to(self.__device)
-                X_image = X_image.to(self.__device)
-                y = y.to(self.__device).argmax(dim=1)
+            with torch.no_grad():
+                # set the logger's pointer position
+                logger.count(CustomMetricsLogger.EPOCH, step)
+                
+                # predict all y's of the validation set and append the model's accuracy 
+                # to the list
+                for X_sensor, X_image, y in dataloader:
+                    X_sensor = X_sensor.to(self.__device)
+                    X_image = X_image.to(self.__device)
+                    y = y.to(self.__device)
 
-                _y = self((X_sensor, X_image))
+                    _y = self((X_sensor, X_image))
 
-                y = y.to(self.__device)
-                loss = self.loss_fn(_y, y)
+                    y = y.to(self.__device)
+                    loss = self.loss_fn(_y, y)
 
-                losses.append(loss.item())
-                accuracies.append(self.__single_accuracy(_y, y))
+                    losses.append(loss.item())
+                    accuracies.append(self.__single_accuracy(_y, y))
 
             # calculate some statistics based on the data collected
             accuracy = np.mean(np.array(accuracies))

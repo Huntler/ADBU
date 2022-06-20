@@ -27,21 +27,32 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         id = self.indices[index]
+        # we need the class number, not onehot encoded to use cross-entropy as loss function
         labels = self.labels[index].astype(np.float32) #[[index]] to retain dimension
+        labels = np.argmax(labels)
+        labels = np.array(labels)
+
         if isinstance(index, int):
             images = np.reshape(np.load('./uah_dataset/processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id) + ".npy"), (self.window_size, 224,224, 3))
             images = images.astype(np.float32) / 255
-            return (self.sensor_data[index], images , labels) # [[index]] to retain dims | [np.newaxis,...] for images
+            images = np.array(images)
+
+            sensor = self.sensor_data[index]
+            sensor = np.array(sensor)
+            return (sensor, images , labels) # [[index]] to retain dims | [np.newaxis,...] for images
 
         else:
             length = len(id)-1
             images = np.reshape(np.load('./uah_dataset/processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id[0]) + ".npy"), (self.window_size, 224,224, 3))[np.newaxis,...]
-
-
+        
         for i in range(length):
             images = np.concatenate((images,np.reshape(np.load('./uah_dataset/processed_dataset/video/window_' + str(self.window_size) + '/window_' + str(id[0]) + ".npy"), (self.window_size, 224,224, 3))[np.newaxis,...]), axis = 0) # (batch size, window_size, 224,224,3)
             images = images.astype(np.float32) / 255
-        return (self.sensor_data[index], images, labels)
+            images = np.array(images)
+
+        sensor = self.sensor_data[index]
+        sensor = np.array(sensor)
+        return (sensor, images, labels)
 
     def read_sensor(self):
         dat_dir = './uah_dataset/processed_dataset/sensor/dat/window_' + str(self.window_size)
@@ -77,8 +88,12 @@ class Dataset(torch.utils.data.Dataset):
 
 if __name__ == "__main__":
     # TODO: perform our tests
-    d = Dataset()
+    d = Dataset(window_size=30)
     sensor, image, label = d[0:5]
     print(sensor.shape)
     print(image.shape)
     print(label.shape)
+    for X in d:
+        sensor, image, y = X
+        y = y
+        print(sensor[0], image.shape, np.argmax(y))

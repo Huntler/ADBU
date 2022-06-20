@@ -14,7 +14,7 @@ import shutil
 import pickle
 from datetime import datetime
 import argparse
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
 
 # TODO: find missing headers: have a look into their data reader again
 # EFFORT: 2h (at most)
@@ -340,7 +340,7 @@ def sensor_data_prepare(window_size):
     #Normalize train by feautures (column)
     scalers = {}
     for i in range(extractedData.shape[2]):
-        scalers[i] = StandardScaler()
+        scalers[i] = StandardScaler() if scaler == "standard" else MinMaxScaler()
         extractedData[:, :, i] = scalers[i].fit_transform(extractedData[:, :, i]) 
 
     #for test
@@ -392,6 +392,7 @@ def sensor_data_prepare(window_size):
 
     return indexing, n_samples, online_semantic
 
+scaler = "minmax"
 if __name__ == "__main__":
     # Create the parser
     dataset = UAHDataset()
@@ -399,8 +400,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Preprocessing stage')
     parser.add_argument('--window_size', type=int, help='window_size', required=True)
+    parser.add_argument('--scaler', type=str, help='either minmax or standard', required=True)
     args = parser.parse_args()
     window_size = args.window_size
+    scaler = args.scaler
     
     (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
     print(indexing, n_samples)
