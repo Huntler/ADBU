@@ -1,4 +1,5 @@
 import argparse
+import copy
 import math
 from multiprocessing import freeze_support
 import os
@@ -67,6 +68,7 @@ def prepare_model():
 
     print(model_versions[0])
     model.load(model_versions[0])
+    model.log_path = path
 
     print(f"Loaded model: {model_name} ({path})")
     return model
@@ -166,7 +168,7 @@ def analyse():
 
     # showing weight analysis before training
     if config_dict["model_name"] in ["Multimodal_v1", "Sensor_v1"]:
-        explain_model(model, initial=True)
+        explain_model(model)
 
 
 if __name__ == "__main__":

@@ -54,12 +54,12 @@ class SensorOnly(BaseModel):
         # get the weights of the first layer
         weights = biases = None
         for name, params in self.__sensor_model.named_parameters():
-            if name == "weight":
+            if "weight" in name:
                 weights = params.data.cpu().numpy()
             else:
                 biases = params.data.cpu().numpy()
             
-            if weights != None and biases != None:
+            if type(weights) != type(None) and type(biases) != type(None):
                 break
 
         weights_processed = np.sum(np.abs(weights), axis=0)

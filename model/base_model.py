@@ -26,7 +26,7 @@ class BaseModel(nn.Module):
         super(BaseModel, self).__init__()
 
         # enable tensorboard
-        if self.writer is None:
+        if self.writer is None and log:
             self.__tb_sub = datetime.now().strftime("%m-%d-%Y_%H%M%S")
             self.__tb_path = f"runs/{tag}/{self.__tb_sub}"
             self.writer = SummaryWriter(self.__tb_path)
@@ -46,6 +46,10 @@ class BaseModel(nn.Module):
     @property
     def log_path(self) -> str:
         return self.__tb_path
+    
+    @log_path.setter
+    def log_path(self, path: str) -> None:
+        self.__tb_path = path
     
     @property
     def device(self) -> str:
