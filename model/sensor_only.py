@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from model.base_model import BaseModel
 from torch import nn
@@ -25,7 +26,7 @@ class SensorOnly(BaseModel):
         # add classifier output inclunding some dense layers
         conv_out_size = (lstm_hidden - 8) * (window_size // 8)
         self.__dense = nn.Sequential(
-            nn.Conv1d(window_size // 4, 20, 5, 1, 0),
+            nn.Conv1d(window_size, window_size // 4, 5, 1, 0),
             nn.BatchNorm1d(window_size // 4),
             nn.Tanh(),
             nn.Conv1d(window_size // 4, window_size // 8, 5, 1, 0),
@@ -44,6 +45,29 @@ class SensorOnly(BaseModel):
         # self.optim = torch.optim.AdamW(self.parameters(), lr=lr, betas=[0.99, 0.999], weight_decay=weight_decay)
         self.optim = torch.optim.SGD(self.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
+
+    def sensor_importance(self) -> np.array:
+        # get the weights of the first layer
+        weights = biases = None
+        for name, params in self.__sensor_model.named_parameters():
+            if name == "weight":
+                weights = params.data.cpu().numpy()
+            else:
+                biases = params.data.cpu().numpy()
+            
+            if weights != None and biases != None:
+                break
+
+        weights_processed = np.sum(np.abs(weights), axis=0)
+        biases_included = np.abs(np.dot(weights.T, biases))
+        
+        # calculate distribution of weights
+        weights_dist = np.exp(weights_processed) / np.sum(np.exp(weights_processed))
+        biases_dist = np.exp(biases_included) / np.sum(np.exp(biases_included))
+        return weights_dist, biases_dist
+    
+    def sensor_image_ratio(self) -> float:
+        return 1
 
     def forward(self, X):
         x, _ = X

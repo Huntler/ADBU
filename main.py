@@ -81,7 +81,7 @@ def train():
     model: BaseModel = prepare_model()
 
     # showing weight analysis before training
-    if config_dict["model_name"] == "Multimodal_v1":
+    if config_dict["model_name"]in ["Multimodal_v1", "Sensor_v1"]:
         explain_model(model, initial=True)
 
     # train the model and save it in the end
@@ -90,7 +90,7 @@ def train():
     BaseModel.save_to_default(model)
 
     # explain the model's weights
-    if config_dict["model_name"] == "Multimodal_v1":
+    if config_dict["model_name"] in ["Multimodal_v1", "Sensor_v1"]:
         explain_model(model)
 
     # execute the model and look at results
@@ -160,9 +160,13 @@ def explain_model(model: MultimodalModel, initial: bool = False):
     plt.savefig(f"{path}/sensor_importance_biases_alt.png")
 
 
-def test():
-    test = prepare_data(mode="test")
-    # TODO
+def analyse():
+    # prepare the model
+    model: BaseModel = prepare_model()
+
+    # showing weight analysis before training
+    if config_dict["model_name"] in ["Multimodal_v1", "Sensor_v1"]:
+        explain_model(model, initial=True)
 
 
 if __name__ == "__main__":
@@ -172,7 +176,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This program trains and tests a deep " +
                                                  "learning model to detect a driving behaviour.")
     parser.add_argument("--config", dest="train_config", help="Trains a model given the path to a configuration file.")
+    parser.add_argument("--analyse", dest="analyse", help="Analyse the weighs of a given model. Provide the config of a trained model.")
     args = parser.parse_args()
+
+    if args.analyse:
+        config_dict = config.get_args(args.analyse)
+        analyse()
+        quit()
 
     # load a configuration file
     config_dict = config.get_args(args.train_config)
