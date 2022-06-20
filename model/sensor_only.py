@@ -46,6 +46,10 @@ class SensorOnly(BaseModel):
         self.optim = torch.optim.SGD(self.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
 
+    def load(self, path) -> None:        
+        self.load_state_dict(torch.load(path))
+        self.eval()
+
     def sensor_importance(self) -> np.array:
         # get the weights of the first layer
         weights = biases = None
@@ -65,7 +69,7 @@ class SensorOnly(BaseModel):
         weights_dist = np.exp(weights_processed) / np.sum(np.exp(weights_processed))
         biases_dist = np.exp(biases_included) / np.sum(np.exp(biases_included))
         return weights_dist, biases_dist
-    
+
     def sensor_image_ratio(self) -> float:
         return 1
 
