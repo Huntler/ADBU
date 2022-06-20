@@ -75,6 +75,7 @@ class MultimodalModel(BaseModel):
         """
         # get mean of image fc parameters
         image_mean = 0
+        num_params = 0
         image_fc = self.__submodels["image"].fc
         for name, param in image_fc.named_parameters():
             # name is either 'bias' or 'weight'
@@ -83,9 +84,12 @@ class MultimodalModel(BaseModel):
             p[p < 0] = 0
 
             image_mean += np.mean(p)
+            num_params += 1
+        image_mean /= num_params
 
         # get mean of sensor fc parameters
         sensor_mean = 0
+        num_params = 0
         sensor_fc = self.__submodels["sensor"].fc
         for name, param in sensor_fc.named_parameters():
             # name is either 'bias' or 'weight'
@@ -94,8 +98,10 @@ class MultimodalModel(BaseModel):
             p[p < 0] = 0
 
             sensor_mean += np.mean(p)
+            num_params += 1
+        sensor_mean /= num_params
         
-        ratio = image_mean / sensor_mean
+        ratio = sensor_mean / image_mean
         return ratio
     
     def forward(self, X):
