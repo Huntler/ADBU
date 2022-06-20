@@ -53,6 +53,10 @@ class MultimodalModel(BaseModel):
         # params = list(self.parameters()) + list(self.__image_module.parameters()) + list(self.__sensor_module.parameters())
         self.optim = torch.optim.SGD(filter(lambda p: p.requires_grad, self.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
         self.scheduler = ExponentialLR(self.optim, gamma=lr_decay)
+
+    def load(self, path) -> None:        
+        self.load_state_dict(torch.load(path))
+        self.eval()
     
     def __init_hidden(self, batch_size) -> Tuple[torch.tensor]:
         return (autograd.Variable(torch.zeros(self.__lstm_layers, batch_size, self.__hidden_dim, device=self.device)),
