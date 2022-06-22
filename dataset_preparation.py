@@ -1,12 +1,7 @@
 import pandas as pd
 import numpy as np
-from sklearn.cluster import KMeans
-#import tensorflow as tf
 import copy
-import matplotlib.pyplot as plt
 import os
-import imageio
-from sklearn.utils import shuffle
 
 from uah_dataset.pandas_importer import UAHDataset
 from uah_dataset.image_process import add_pointers_to_window, dict_with_all_frames_pointed, video_to_frames, create_windowed_frames
