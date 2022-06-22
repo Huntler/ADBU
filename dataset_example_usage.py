@@ -272,10 +272,9 @@ def sensor_data_prepare(window_size):
     train, labels = reshaping_to_numpy(online_semantic, window_size)
 
     n_samples = len(train)
-    # n_samples = 2937
     indexing = np.random.permutation(n_samples)
 
-    # (train,labels) = (train[indexing],labels[indexing])
+    (train,labels) = (train[indexing],labels[indexing])
 
     npy_new_dir = './uah_dataset/processed_dataset/sensor'
     if not os.path.exists(npy_new_dir):
