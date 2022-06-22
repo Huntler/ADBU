@@ -79,7 +79,6 @@ def dict_with_all_frames_pointed(pointers):
     print(f"\nTime taken to load: {(time.time() - start_time):.2f}s")
     return dictionary
 
-
 def video_to_frames(fps : int = 1) -> None:
     """This method extracts all needed video frames and stores them as individual png frames
         Run this once to transform the data into a directory containing all the frames.
@@ -136,8 +135,6 @@ def video_to_frames(fps : int = 1) -> None:
             os.system(f"ffmpeg -i {folder_driver}/{rec}/{video_file} -vf fps={fps},scale=224x224 {folder_driver}/{rec}/frames_rgb_{fps:.0f}/frame%6d.png")
 
     return None
-
-
 
 def create_windowed_frames(window_size, indices, n_samples, online_semantic):
     """

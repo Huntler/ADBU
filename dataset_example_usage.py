@@ -16,114 +16,10 @@ from datetime import datetime
 import argparse
 from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
 
-# TODO: find missing headers: have a look into their data reader again
-# EFFORT: 2h (at most)
-
-# TODO: sample frame of video corresponding to sensor data depending on time step
-# EFFORT: 2h (depending on libraries i can use)
-
-# TODO: apply some preprocessing on image data (image normalization, contrast sharpening, …)
-# EFFORT depends on the amount of preprocessing
-
-# TODO: save this form of dataset created by us and save it (using pandas and/or our own datastructure)
-
-# to extract video data (run this one time only to set up your dataset correctly)
-# UAHDataset(generate_video_frames=True)
-
-# create the dataset
-#dataset = UAHDataset()
-# print("Dataset:", dataset.latest)
-# print("Drivers:", dataset.drivers)
-
-# #testorprint(1)
-
-
-# '''# read one specific driver
-# print("Info of driver D1")
-# road_type_dict = dataset.dataframe_by_driver("D1", skip_missing_headers=True, suppress_warings=True)
-# roads = [_ for _ in road_type_dict.keys()]
-# print("Roads:\t", roads)
-# print("# Roads:", sum([len(road_type_dict[_]) for _ in roads]))
-
-# # read all drivers
-# # note: this should work, but we loose information about when a time series resets.
-# # This could prevent learning later on.
-# print("Info of all drivers")'''
-#road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
-
-# '''roads = [_ for _ in road_type_dict.keys()]
-# print("# Roads:", sum([len(road_type_dict[_]) for _ in roads]))
-
-# for r, rd in road_type_dict.items():
-#     print(f"\t{r} - {len(rd)}")
-#     for l, ld in rd.items():
-#         print(f"\t\t{l} - {len(ld)}")
-
-# # process one specific dataframe'''
-# array = []
-# for road_type in road_type_dict.items():
-#     print(1)
-
-#     skip = True
-#     for route in road_type[1].items():
-#         mean = np.array(route[1].mean())
-#         array.append(mean)
-
-# #print(road_type_dict["SECONDARY"]["NORMAL"][['Altitude', 'Longitude', 'Latitude']].head(5))
-# #'Altitude', 'Longitude', 'Latitude'
-
-# fused_data = np.array(array)
-# fused_data[np.isnan(fused_data)]=0
-
-# kmeans = KMeans(n_clusters=2, random_state=0).fit(fused_data)
-
-
-
-# define model
-'''
-visible = Input(shape=(8,))
-# encoder level 1
-e = Dense(n_inputs*2)(visible)
-e = BatchNormalization()(e)
-e = LeakyReLU()(e)
-# encoder level 2
-e = Dense(n_inputs)(e)
-e = BatchNormalization()(e)
-e = LeakyReLU()(e)
-# bottleneck
-n_bottleneck = n_inputs
-bottleneck = Dense(n_bottleneck)(e)
-
-# define decoder, level 1
-d = Dense(n_inputs)(bottleneck)
-d = BatchNormalization()(d)
-d = LeakyReLU()(d)
-# decoder level 2
-d = Dense(n_inputs*2)(d)
-d = BatchNormalization()(d)
-d = LeakyReLU()(d)
-# output layer
-output = Dense(n_inputs, activation='linear')(d)
-# define autoencoder model
-model = Model(inputs=visible, outputs=output)
-
-# compile autoencoder model
-model.compile(optimizer='adam', loss='mse')
-
-history = model.fit(X_train, X_train, epochs=200, batch_size=16, verbose=2, validation_data=(X_test,X_test))
-'''
-
-
-'''Then we will extract the inner layer after training'''
-
-
-'''We will finaly cluster based on the representation'''
-# print(kmeans.labels_)
-
 
 def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold : int = 60, increment : int = 10) -> dict:
     """
-    Creates windows, for every
+    Creates windows, for every driver's trip.
     :param dictionary: nested dic road types -> mood -> dataframe
     :param rows_per_minute: number of rows that on average constitute one minute
     :param initial_threshold: timestamp when we start to approve the windows
@@ -161,10 +57,10 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
 
             for j in mood_df.index:
                 try:
-                    window = mood_df[j:j+window_size]
+                    window = mood_df[j:j+rows_per_minute]
                 except Exception:
                     pass
-                if window.shape != (window_size,41):
+                if window.shape != (rows_per_minute,41):
                     print('pass')
                     pass
                 if window.iloc[-1, 0] < window.iloc[0, 0]:  # meaning we have finished one driver trip, as the nnext df values are lower than the previous
@@ -180,19 +76,16 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
                     window_time += time
                     time_difference.append(time)
             windowed_dic[road][mood] = windowed
-    print(f"Average window timelapse: {window_time/window_number}")
     print(f"Number of windows: {window_number}")
-    plt.hist(time_difference, bins = 120)
-    plt.title(f"Window timelapse for {rows_per_minute} data points.")
-    plt.xlabel("Seconds")
-    #plt.show()
+
     return windowed_dic
 
 
 
 def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH-DRIVESET-v1/"):
     """
-    Mainly copied from the original reader
+    Note: we ended up not using this loading system
+    Mainly copied from the original reader.
     :param path_to_uah_folder:
     :return: Online semantics, in nested dictionary ->road type -> mood -> dataframe for all driver on this mood and road type
     """
@@ -230,6 +123,13 @@ def read(path_to_uah_folder: str = f"{os.path.dirname(__file__)}/uah_dataset/UAH
     return online_semantics
 
 def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
+    """"
+    This function will convert the data from the dataframes in the dictionary into a numpy array.
+    :param dataf dictionary: road type -> mood -> window_index -> dataframe
+    :param window_size int: the size of the window
+    :return numpy array (number of windows, window_size, number_of_features)
+    """
+
     feature_size = list(list(list(dataf.values())[0].values())[0].values())[0].shape[1] #TODO change that again
     train = np.empty([0,window_size, feature_size])
     labels = np.empty([0,3], dtype=int)
@@ -245,9 +145,6 @@ def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
                 raise RuntimeError(mood , " does not correspond to any existing labels")
 
             for i in mood_df:
-                # FIXME: window size can be smaller than specified
-                #if mood_df[i].shape[0] != window_size:
-                #    continue
                 train = np.concatenate((train, mood_df[i].values[np.newaxis,...]), axis=0)
                 labels = np.concatenate((labels, label[np.newaxis,...]), axis=0)
             print('Iteration passed')
@@ -259,14 +156,24 @@ def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
 
 
 def sensor_data_prepare(window_size):
+    """"
+    This function will prepare the sensor data. It takes in the desired size of the window,
+    it then loads the data, and calls the window function. It then transforms the windows into numpy,
+    performs some preprocessing and saves the values as a memory map.
+    :param window_size int: the desired size of the window
+    :return indexing This is permutation with length equal to the number of windows, we use this to match the video
+    windows to the correct sensor windows
+    :return n_samples int: is the number of windows
+    :return dictionary Road type -> mood -> window_index -> dataframe
+    """
+
     now = datetime.now()  # current date and time
     # Read data from files and store to panda frames
     dataset = UAHDataset()
     road_type_dict = dataset.dataframe(skip_missing_headers=True, suppress_warings=True)
     # Windowing the dataset
     windowed_dic = copy.deepcopy(road_type_dict)
-    rows_per_minute = window_size  # args.window_size  # for dataframe, doesnt work consistently
-    online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
+    online_semantic = windowing(windowed_dic, rows_per_minute=window_size)
     pass
     # Reshaping to numpy
     train, labels = reshaping_to_numpy(online_semantic, window_size)
