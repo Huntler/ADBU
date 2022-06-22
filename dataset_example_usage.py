@@ -159,9 +159,9 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
                     window_time += time
                     time_difference.append(time)'''
 
-            for i in mood_df.index:
+            for j in mood_df.index:
                 try:
-                    window = mood_df[i:i+window_size]
+                    window = mood_df[j:j+window_size]
                 except Exception:
                     pass
                 if window.shape != (window_size,41):
@@ -179,7 +179,6 @@ def windowing(dictionary : dict ,rows_per_minute : int = 360, initial_threshold 
                     time = (window.iloc[-1, 0]-window.iloc[0,0])+1
                     window_time += time
                     time_difference.append(time)
-
             windowed_dic[road][mood] = windowed
     print(f"Average window timelapse: {window_time/window_number}")
     print(f"Number of windows: {window_number}")
@@ -254,6 +253,7 @@ def reshaping_to_numpy(dataf : pd.DataFrame, window_size):
             print('Iteration passed')
     print(train.shape)
     print(labels.shape)
+
     return train, labels
 
 
@@ -267,7 +267,7 @@ def sensor_data_prepare(window_size):
     windowed_dic = copy.deepcopy(road_type_dict)
     rows_per_minute = window_size  # args.window_size  # for dataframe, doesnt work consistently
     online_semantic = windowing(windowed_dic, rows_per_minute=rows_per_minute)
-
+    pass
     # Reshaping to numpy
     train, labels = reshaping_to_numpy(online_semantic, window_size)
 
@@ -275,7 +275,7 @@ def sensor_data_prepare(window_size):
     # n_samples = 2937
     indexing = np.random.permutation(n_samples)
 
-    (train,labels) = (train[indexing],labels[indexing]) #TODO create index list and pass to phillip
+    # (train,labels) = (train[indexing],labels[indexing])
 
     npy_new_dir = './uah_dataset/processed_dataset/sensor'
     if not os.path.exists(npy_new_dir):
@@ -310,31 +310,55 @@ def sensor_data_prepare(window_size):
 
 
 
-    # get rid of some features
-    # 6: Latitude used to query OSM
-    # 11: Latitude
-    # 12: Longitude
-    # 13: Altitude
-    # 21: Unknown
-    # 29: Roll angle
-    # 30: Pitch angle
-    # 31: Yaw angle
-    # 37: Phi
-    # 40: Driver
+    # 0:(OUT) Timestamp
+    # 1: Car position form lane center (m)
+    # 2: Phi
+    # 3:(OUT) Road width
+    # 4: State of lane estimator
+    # 5: Current road max speed
+    # 6:(OUT) Max speed reliability
+    # 7:(OUT) Road type
+    # 8: #lanes in road
+    # 9: estimated current lane
+    # 10: Latitude used to query OSM
+    # 11:(OUT) Longitude used to query OSM
+    # 12:(OUT) Delay answer OSM Query (s)
+    # 13:(OUT) Speed (kmh)
+    # 14: Distance to ahead vehicle
+    # 15: Impact to ahead vehicle (s)
+    # 16: Detectet # of vehicles
+    # 17: GPS speed (kmh)
+    # 18: Activation Boolean (speed>50kmh)
+    # 19: X acceleration (Gs)
+    # 20: Y acceleration(Gs)
+    # 21:(OUT) Z acceleration(Gs)
+    # 22: X acceleration (Gs)(Kernel Filter)
+    # 23: Y acceleration(Gs)(Kernel Filter)
+    # 24: Z acceleration(Gs)(Kernel Filter)
+    # 25: Roll
+    # 26:(OUT) Pitch
+    # 27:(OUT) Yaw
+    # 28:(OUT)Speed
+    # 29:(OUT) Latitude
+    # 30:(OUT) Longitude
+    # 31:(OUT) Altitude
+    # 32: Vertical Accuracy
+    # 33: Horizontal accuracy
+    # 34: Course
+    # 35: Difcourse: course variation
+    # 36:(OUT) Position state
+    # 37:(OUT) Lanex dist state
+    # 38:(OUT) Lanex history
+    # 39:(OUT) Unknown
+    # 40:(OUT) Driver
 
-    'TO DISCUSS' \
-    '26: X accel filtered by KF (Gs)' \
-    '27: Y accel filtered by KF (Gs)' \
-    '28: Z accel filtered by KF (Gs)'
-    '0: Time'
 
-
-    idx_OUT_columns = [0,6, 3, 7, 11, 12, 13, 21,26,27,28, 29, 30, 31, 36, 37, 38, 39, 40]
+    idx_OUT_columns = [0, 3, 6, 7, 11, 12, 13, 21,26,27,28, 29, 30, 31, 36, 37, 38, 39, 40]
     idx_IN_columns = [i for i in range(np.shape(train_processed)[2]) if i not in idx_OUT_columns]
     extractedData = train_processed[:, :, idx_IN_columns]
 
     extractedData = extractedData.astype(np.float32)
-    #Remone NaN values
+    #Remove NaN values
     extractedData = np.nan_to_num(extractedData, copy=True, nan=0.0, posinf=None, neginf=None)
 
     #Normalize train by feautures (column)
@@ -351,8 +375,9 @@ def sensor_data_prepare(window_size):
     # FIXME: normalize over the whole dataset
     for j in range(len(extractedData)):
         df1=pd.DataFrame(extractedData[j])
-        for i in range (0, len(idx_IN_columns)):
-            df1[i] = df1[i] / (df1[i].abs().max()+0.01)
+        for i in range(0, len(idx_IN_columns)):
+            df1[i] = (df1[i] / (df1[i].abs().max()+0.01)).astype(float)
+
         extractedData[j]=df1.to_numpy()"""
 
     # save data to .dat format
@@ -374,6 +399,10 @@ def sensor_data_prepare(window_size):
     fp[:] = extractedData[:]
     fp.flush()
     del fp
+
+    print(extractedData.shape)
+
+
 
     # save label data
     labels_processed = labels
@@ -406,7 +435,6 @@ if __name__ == "__main__":
     scaler = args.scaler
     
     (indexing, n_samples, online_semantic) = sensor_data_prepare(window_size)
-    print(indexing, n_samples)
     fps = (window_size/60)
     video_to_frames(fps)
     create_windowed_frames(window_size, indexing, n_samples, online_semantic)
@@ -414,4 +442,3 @@ if __name__ == "__main__":
 
 
 
-    print(n_samples)
