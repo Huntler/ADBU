@@ -83,7 +83,7 @@ def train():
     model: BaseModel = prepare_model()
 
     # showing weight analysis before training
-    if config_dict["model_name"]in ["Multimodal_v1", "Sensor_v1"]:
+    if config_dict["model_name"] in ["Multimodal_v1", "Sensor_v1"]:
         explain_model(model, initial=True)
 
     # train the model and save it in the end
@@ -114,14 +114,15 @@ def explain_model(model: MultimodalModel, initial: bool = False):
     sensor_importance = model.sensor_importance()
 
     # pie diagram for sensor-image ratio
-    labels = "Sensor", "Image"
-    sizes = [100 * sensor_image, 100 * (1-sensor_image)]
-    colors = [plt.cm.Reds(.4), plt.cm.Reds(.7)]
-    fig1, ax1 = plt.subplots()
-    ax1.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-    ax1.axis('equal')
-    ax1.set_title("Sensor-Image Ratio")
-    plt.savefig(f"{path}/sensor_image_ratio.png")
+    # labels = "Sensor", "Image"
+    # sizes = [100 * sensor_image, 100 * (1-sensor_image)]
+    # colors = [plt.cm.Reds(.4), plt.cm.Reds(.7)]
+    # fig1, ax1 = plt.subplots()
+    # ax1.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+    # ax1.axis('equal')
+    # ax1.set_title("Sensor-Image Ratio")
+    # plt.axis('off')
+    # plt.savefig(f"{path}/sensor_image_ratio.png")
 
     # bar diagram showing sensor importance
     fig, ax = plt.subplots()
@@ -129,7 +130,8 @@ def explain_model(model: MultimodalModel, initial: bool = False):
     ax.bar(0.5 + np.arange(len(sensor_importance[0])), sensor_importance[0], color=colors)
     ax.set_xlabel("Sensor ID")
     ax.set_ylabel("Relative importance %")
-    ax.set_title("Sensor Importance (no bias)")
+    # ax.set_title("Sensor Importance (no bias)")
+    plt.axis('off')
     plt.savefig(f"{path}/sensor_importance_weights.png")
 
     fig, ax = plt.subplots()
@@ -137,28 +139,53 @@ def explain_model(model: MultimodalModel, initial: bool = False):
     ax.bar(0.5 + np.arange(len(sensor_importance[1])), sensor_importance[1], color=colors)
     ax.set_xlabel("Sensor ID")
     ax.set_ylabel("Relative importance %")
-    ax.set_title("Sensor Importance (bias included)")
+    # ax.set_title("Sensor Importance (bias included)")
+    plt.axis('off')
     plt.savefig(f"{path}/sensor_importance_biases.png")
 
     # alternative visualisation of sensor importance
     data = np.array(sensor_importance[0])
-    data.resize((3, 6), refcheck=False)
+    data.resize((4, 6), refcheck=False)
+    data[data == 0.0] = np.nan
     fig, ax = plt.subplots()
-    cax = ax.matshow(data, cmap="Reds")
+    im = ax.matshow(data, cmap="Reds")
+    ax.set_axis_off()
     for (i, j), z in np.ndenumerate(data):
-        ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
-    fig.colorbar(cax)
-    plt.title("Sensor Importance (no bias)")
+        if j + i * 6 < 22:
+            ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
+        else:
+            ax.text(j, i, "", ha='center', va='center')
+
+    plt.tight_layout(pad=6)
+    cax = fig.add_axes([ax.get_position().x1+0.01,ax.get_position().y0,0.02,ax.get_position().height])
+    ticks = [np.nanmin(data), np.nanmax(data)]
+    bar = plt.colorbar(im, cax=cax, ticks=ticks)
+    bar.outline.set_visible(False)
+    bar.ax.set_yticklabels([f"{x: .2f}" for x in ticks])
+
+    # plt.title("Sensor Importance (no bias)")
     plt.savefig(f"{path}/sensor_importance_weights_alt.png")
     
     data = np.array(sensor_importance[1])
-    data.resize((3, 6), refcheck=False)
+    data.resize((4, 6), refcheck=False)
+    data[data == 0.0] = np.nan
     fig, ax = plt.subplots()
-    cax = ax.matshow(data, cmap="Reds")
+    im = ax.matshow(data, cmap="Reds")
+    ax.set_axis_off()
     for (i, j), z in np.ndenumerate(data):
-        ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
-    fig.colorbar(cax)
-    plt.title("Sensor Importance (bias included)")
+        if j + i * 6 < 22:
+            ax.text(j, i, f"{j + i * 6}", ha='center', va='center')
+        else:
+            ax.text(j, i, "", ha='center', va='center')
+
+    plt.tight_layout(pad=6)
+    cax = fig.add_axes([ax.get_position().x1+0.01,ax.get_position().y0,0.02,ax.get_position().height])
+    ticks = [np.nanmin(data), np.nanmax(data)]
+    bar = plt.colorbar(im, cax=cax, ticks=ticks)
+    bar.outline.set_visible(False)
+    bar.ax.set_yticklabels([f"{x: .2f}" for x in ticks])
+
+    # plt.title("Sensor Importance (bias included)")
     plt.savefig(f"{path}/sensor_importance_biases_alt.png")
 
 
@@ -169,6 +196,9 @@ def analyse():
     # showing weight analysis before training
     if config_dict["model_name"] in ["Multimodal_v1", "Sensor_v1"]:
         explain_model(model)
+    else:
+        model_name =  config_dict["model_name"]
+        print(f"Analysis not supported for model: {model_name}")
 
 
 if __name__ == "__main__":
